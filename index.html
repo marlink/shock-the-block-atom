@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShockTheBlock Atom</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>ShockTheBlock Atom</h1>
+        <div class="game-stats">
+            <div class="balls-left">Balls: <span id="balls-count">3</span></div>
+            <div class="score">Score: <span id="score">0</span></div>
+        </div>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="controls">
+            <div class="angle-control">
+                <label for="angle">Angle:</label>
+                <input type="range" id="angle" min="0" max="180" value="90">
+                <span id="angle-value">90°</span>
+            </div>
+            <div class="power-control">
+                <label for="power">Power:</label>
+                <input type="range" id="power" min="1" max="15" value="8">
+                <span id="power-value">8</span>
+            </div>
+            <button id="fire-button">FIRE!</button>
+        </div>
+        
+        <!-- Custom dialog component -->
+        <div id="custom-dialog" class="custom-dialog hidden">
+            <div class="dialog-content">
+                <p id="dialog-message"></p>
+                <button id="dialog-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+    <script src="game-fixed.js"></script>
+</body>
+</html>
