@@ -1,6 +1,6 @@
 /**
  * ShockTheBlock Atom - A block-breaking game with physics
- * Version: v0.1
+ * Version: v0.2
  * 
  * Features:
  * - Physics-based ball movement with gravity and friction
@@ -14,7 +14,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game version
-const GAME_VERSION = 'v0.1';
+const GAME_VERSION = 'v0.2';
 
 // Game variables
 let ballsLeft = 3;

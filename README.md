@@ -1,6 +1,6 @@
 # ShockTheBlock Atom
 
-## Version: v0.1
+## Version: v0.2
 
 A block-breaking game with physics-based ball movement, particle effects, and performance monitoring.
 
@@ -34,9 +34,43 @@ The project includes Git hooks for version automation:
 1. **post-tag**: Automatically updates version numbers in all files when a new tag is created
 2. **pre-commit**: Ensures version numbers are consistent across all files
 
+## Automated Version Tracking
+
+This project includes an automated version tracking system that:
+- Automatically generates summary files in the `manual-version-tracker` directory
+- Increments version numbers when session-ending keywords are detected in commit messages
+- Maintains synchronization between version tags and folder names
+
+### Session Keywords
+
+The following keywords in commit messages will trigger version increments:
+- "save session"
+- "end session"
+- "commit changes"
+- "upload to git"
+
+### Using Version-Aware Commits
+
+Instead of regular `git commit`, use:
+```bash
+git gcommit -m "Your commit message"
+```
+
+To end a session and increment the version:
+```bash
+git gcommit -m "save session: implemented feature X"
+```
+
+### Version Verification
+
+To verify version synchronization across files:
+```bash
+npm run version-check
+```
+
 ### Creating a New Version
 
-To create a new version:
+To create a new version manually:
 
 ```bash
 # Make your changes
