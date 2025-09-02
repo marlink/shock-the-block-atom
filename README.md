@@ -1,6 +1,6 @@
 # ShockTheBlock Atom
 
-## Version: v0.2
+## Version: v0.3
 
 A block-breaking game with physics-based ball movement, particle effects, and performance monitoring.
 
@@ -11,10 +11,11 @@ A block-breaking game with physics-based ball movement, particle effects, and pe
 - Performance monitoring
 - Custom dialog implementation
 - Git-based version tracking
+- Three-phase gameplay flow (Targeting, Power Calibration, Execution)
 
 ## Version Control System
 
-This project uses Git for version control with semantic versioning (v0.2, v0.3, etc.).
+This project uses Git for version control with semantic versioning (v0.3, v0.4, etc.).
 
 ### Version Display
 

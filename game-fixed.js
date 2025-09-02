@@ -1,12 +1,13 @@
 /**
  * ShockTheBlock Atom - A block-breaking game with physics
- * Version: v0.2
+ * Version: v0.3
  * 
  * Features:
  * - Physics-based ball movement with gravity and friction
  * - Object pooling for particle effects
  * - Performance monitoring
  * - Custom dialog implementation
+ * - Three-phase gameplay flow
  */
 
 // Get canvas and context
@@ -14,7 +15,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game version
-const GAME_VERSION = 'v0.2';
+const GAME_VERSION = 'v0.3';
 
 // Game variables
 let ballsLeft = 3;
@@ -27,6 +28,7 @@ let fpsUpdateInterval = 500; // Update FPS display every 500ms
 let lastFpsUpdate = 0;
 let frameCount = 0;
 let isDialogOpen = false; // Flag to track dialog state
+let ballsUsed = 0; // Track how many balls have been used
 
 // Performance monitoring
 let performanceMetrics = {
@@ -161,8 +163,8 @@ powerSlider.addEventListener('input', () => {
 // Ball properties
 const ball = {
     x: canvas.width / 2,
-    y: canvas.height - 30,
-    radius: 10,
+    y: canvas.height - 40,
+    radius: 15, // Increased ball size to match larger blocks
     color: '#ffffff',
     dx: 0,
     dy: 0,
@@ -170,9 +172,9 @@ const ball = {
 };
 
 // Block properties
-const BLOCK_WIDTH = 60;
-const BLOCK_HEIGHT = 30;
-const BLOCK_PADDING = 10;
+const BLOCK_WIDTH = 120;
+const BLOCK_HEIGHT = 120;
+const BLOCK_PADDING = 20; // Increased padding for larger blocks
 const BLOCK_OFFSET_TOP = 50;
 const BLOCK_OFFSET_LEFT = 35;
 
@@ -192,9 +194,9 @@ let blocks = [];
 function createBlocks() {
     blocks = [];
     
-    // Determine grid dimensions based on level
-    const rows = Math.min(3 + Math.floor(currentLevel / 2), 8);
-    const columns = Math.min(5 + Math.floor(currentLevel / 3), 10);
+    // Determine grid dimensions based on level - adjusted for larger blocks
+    const rows = Math.min(2 + Math.floor(currentLevel / 2), 5);
+    const columns = Math.min(3 + Math.floor(currentLevel / 3), 6);
     
     // Calculate complexity factors
     const gapProbability = Math.min(0.1 + (currentLevel * 0.05), 0.4); // Chance of a gap in the grid
@@ -213,10 +215,10 @@ function createBlocks() {
                 
                 // Create special zone within the block
                 const specialZone = {
-                    width: BLOCK_WIDTH * 0.3,
-                    height: BLOCK_HEIGHT * 0.3,
-                    offsetX: BLOCK_WIDTH * (0.2 + Math.random() * 0.5),
-                    offsetY: BLOCK_HEIGHT * (0.2 + Math.random() * 0.5)
+                    width: BLOCK_WIDTH * 0.4,
+                    height: BLOCK_HEIGHT * 0.4,
+                    offsetX: BLOCK_WIDTH * (0.3 + Math.random() * 0.3), // Adjusted to keep special zone fully within block
+                    offsetY: BLOCK_HEIGHT * (0.3 + Math.random() * 0.3) // Adjusted to keep special zone fully within block
                 };
                 
                 blocks[r][c] = {
@@ -385,7 +387,7 @@ function destroyBlockArea(centerRow, centerCol, radius) {
 
 // Create particle effects when a block is destroyed
 function createDestroyParticles(x, y, color) {
-    const particleCount = 15;
+    const particleCount = 30; // Increased particle count for larger blocks
     
     for (let i = 0; i < particleCount; i++) {
         const particle = particlePool.get();
@@ -393,11 +395,11 @@ function createDestroyParticles(x, y, color) {
         // Set particle properties
         particle.x = x;
         particle.y = y;
-        particle.radius = 1 + Math.random() * 3;
+        particle.radius = 2 + Math.random() * 5; // Larger particles for better visibility
         particle.color = color;
         particle.alpha = 1;
         particle.life = 0;
-        particle.maxLife = 20 + Math.random() * 20;
+        particle.maxLife = 30 + Math.random() * 30; // Longer lifetime for particles
         
         // Random velocity
         const angle = Math.random() * Math.PI * 2;
@@ -519,7 +521,11 @@ function updateBall() {
 // Handle lost ball
 function ballLost() {
     ballsLeft--;
+    ballsUsed++;
     document.getElementById('balls-count').textContent = ballsLeft;
+    
+    // Update ball counter UI
+    updateBallCounterUI();
     
     // Reset ball position
     ball.x = canvas.width / 2;
@@ -528,10 +534,16 @@ function ballLost() {
     ball.dy = 0;
     ball.moving = false;
     
+    // Show controls when ball is reset
+    const controlsElement = document.querySelector('.controls');
+    controlsElement.classList.remove('controls-hidden');
+    controlsElement.classList.add('controls-visible');
+    
     // Check if game over
     if (ballsLeft <= 0) {
-        alert('Game Over! Your score: ' + score);
-        init(); // Restart the game
+        showDialog('Game Over! Your score: ' + score, () => {
+            init(); // Restart the game
+        });
     }
 }
 
@@ -627,8 +639,12 @@ function init() {
     ballsLeft = 3;
     score = 0;
     currentLevel = 1;
+    ballsUsed = 0;
     document.getElementById('balls-count').textContent = ballsLeft;
     document.getElementById('score').textContent = score;
+    
+    // Reset ball counter UI
+    updateBallCounterUI();
     
     // Reset ball position
     ball.x = canvas.width / 2;
@@ -637,11 +653,43 @@ function init() {
     ball.dy = 0;
     ball.moving = false;
     
+    // Make controls visible initially
+    const controlsElement = document.querySelector('.controls');
+    controlsElement.classList.remove('controls-hidden');
+    controlsElement.classList.add('controls-visible');
+    
     // Create blocks for the first level
     createBlocks();
     
     // Start the game loop
     gameLoop();
+}
+
+// Update the ball counter UI
+function updateBallCounterUI() {
+    // First, reset all balls to their default state
+    for (let i = 1; i <= 3; i++) {
+        const ballElement = document.getElementById(`ball-${i}`);
+        if (ballElement) {
+            ballElement.classList.remove('ball-used');
+        }
+    }
+    
+    // Mark used balls
+    for (let i = 1; i <= ballsUsed; i++) {
+        const ballElement = document.getElementById(`ball-${i}`);
+        if (ballElement) {
+            ballElement.classList.add('ball-used');
+        }
+    }
+    
+    // Show/hide the "No balls remaining" message
+    const ballStatusMessage = document.getElementById('ball-status-message');
+    if (ballsLeft <= 0) {
+        ballStatusMessage.classList.remove('hidden');
+    } else {
+        ballStatusMessage.classList.add('hidden');
+    }
 }
 
 // Fire the ball with enhanced power levels
@@ -681,6 +729,17 @@ fireButton.addEventListener('click', () => {
         }
         
         ball.moving = true;
+        
+        // Hide controls when ball is moving
+        const controlsElement = document.querySelector('.controls');
+        controlsElement.classList.remove('controls-visible');
+        controlsElement.classList.add('controls-hidden');
+        
+        // Mark the first ball as used when the round begins
+        if (ballsUsed === 0) {
+            ballsUsed = 1;
+            updateBallCounterUI();
+        }
     }
 });
 

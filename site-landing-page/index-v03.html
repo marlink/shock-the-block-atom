@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ShockTheBlock Atom - Modern physics-based block breaking game with advanced features and browser compatibility">
+    <meta name="keywords" content="block breaking game, physics game, browser game, HTML5 game">
+    <meta name="author" content="ShockTheBlock Team">
+    <title>ShockTheBlock Atom - Modern Physics-Based Block Breaking Game</title>
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" as="style">
+    <link rel="preload" href="styles-v03.css" as="style">
+    
+    <link rel="stylesheet" href="styles-v03.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Performance optimizations -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+</head>
+<body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="skip-link" aria-label="Skip to main content">Skip to main content</a>
+    
+    <!-- Navigation -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text" aria-label="ShockTheBlock">ShockTheBlock</span>
+                <span class="logo-atom" aria-hidden="true" role="img" aria-label="Atom symbol">⚛</span>
+            </div>
+            <div class="nav-links">
+                <a href="#features" aria-label="Navigate to features section">Features</a>
+                <a href="#tech" aria-label="Navigate to technology section">Technology</a>
+                <a href="#download" aria-label="Navigate to download section">Play Now</a>
+            </div>
+            <!-- Mobile menu button -->
+            <button class="mobile-menu-btn" aria-label="Toggle mobile menu" aria-expanded="false">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="hero" role="banner" aria-labelledby="hero-title">
+            <div class="hero-background" aria-hidden="true">
+                <div class="particle" role="presentation"></div>
+                <div class="particle" role="presentation"></div>
+                <div class="particle" role="presentation"></div>
+            </div>
+            <div class="hero-content">
+                <h1 id="hero-title" class="hero-title">
+                    <span class="title-main">ShockTheBlock</span>
+                    <span class="title-sub">Atom</span>
+                </h1>
+                <p class="hero-subtitle">Experience the next generation of physics-based block breaking</p>
+                <div class="version-badge" role="status" aria-label="Current version 0.2.0">Version 0.2.0</div>
+                <div class="hero-buttons">
+                    <button class="btn btn-primary" aria-label="Start playing ShockTheBlock Atom now">Play Now</button>
+                    <button class="btn btn-secondary" aria-label="Learn more about the game">Learn More</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features" aria-labelledby="features-title">
+            <div class="container">
+                <h2 id="features-title" class="section-title">Core Features</h2>
+                <div class="features-grid" role="list">
+                    <article class="feature-card" role="listitem">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Physics icon">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+                                <path d="M2 12h20"/>
+                            </svg>
+                        </div>
+                        <h3>Physics-Based Movement</h3>
+                        <p>Advanced ball physics with realistic gravity and friction effects for immersive gameplay</p>
+                    </article>
+                    <article class="feature-card" role="listitem">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Performance icon">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                        </div>
+                        <h3>Object Pooling</h3>
+                        <p>Optimized particle effects system using object pooling for smooth performance</p>
+                    </article>
+                    <article class="feature-card" role="listitem">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Monitoring icon">
+                                <path d="M3 3v18h18"/>
+                                <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/>
+                            </svg>
+                        </div>
+                        <h3>Performance Monitoring</h3>
+                        <p>Real-time metrics display to track game performance and optimization</p>
+                    </article>
+                    <article class="feature-card" role="listitem">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Dialog icon">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            </svg>
+                        </div>
+                        <h3>Custom Dialogs</h3>
+                        <p>Enhanced user experience with custom dialog implementation</p>
+                    </article>
+                    <article class="feature-card" role="listitem">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Git integration icon">
+                                <path d="M23 7l-7 5 7 5V7z"/>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                            </svg>
+                        </div>
+                        <h3>Git Integration</h3>
+                        <p>Automated version tracking with seamless GitHub synchronization</p>
+                    </article>
+                    <article class="feature-card" role="listitem">
+                        <div class="feature-icon" aria-hidden="true">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" role="img" aria-label="Browser icon">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                                <line x1="8" y1="21" x2="16" y2="21"/>
+                                <line x1="12" y1="17" x2="12" y2="21"/>
+                            </svg>
+                        </div>
+                        <h3>Browser-Based</h3>
+                        <p>No downloads required - play directly in your web browser</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technology Section -->
+        <section id="tech" class="technology" aria-labelledby="tech-title">
+            <div class="container">
+                <h2 id="tech-title" class="section-title">Technical Excellence</h2>
+                <div class="tech-content">
+                    <div class="tech-info">
+                        <article class="tech-item">
+                            <h3>Core Architecture</h3>
+                            <ul role="list">
+                                <li><strong>index.html:</strong> Game UI setup and script loading</li>
+                                <li><strong>game-fixed.js:</strong> Main game logic with physics and rendering</li>
+                                <li><strong>styles.css:</strong> Modern responsive styling</li>
+                            </ul>
+                        </article>
+                        <article class="tech-item">
+                            <h3>Version Control</h3>
+                            <ul role="list">
+                                <li>Semantic versioning (v0.1, v0.2, etc.)</li>
+                                <li>Automated Git hooks for consistency</li>
+                                <li>Cross-file version synchronization</li>
+                            </ul>
+                        </article>
+                        <article class="tech-item">
+                            <h3>Performance Optimizations</h3>
+                            <ul role="list">
+                                <li>Object pooling for particle effects</li>
+                                <li>Real-time performance metrics</li>
+                                <li>Minimal external dependencies</li>
+                            </ul>
+                        </article>
+                    </div>
+                    <div class="tech-visual">
+                        <div class="code-preview" role="img" aria-label="Code preview showing game-fixed.js version 0.2">
+                            <div class="code-header">
+                                <span class="code-title">game-fixed.js</span>
+                                <span class="version-tag">v0.2</span>
+                            </div>
+                            <div class="code-content">
+                                <div class="code-line">// Physics-based ball movement</div>
+                                <div class="code-line">const GAME_VERSION = 'v0.2';</div>
+                                <div class="code-line">// Object pooling implementation</div>
+                                <div class="code-line">// Performance monitoring</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="stats" aria-labelledby="stats-title">
+            <div class="container">
+                <h2 id="stats-title" class="sr-only">Game Statistics</h2>
+                <div class="stats-grid" role="list">
+                    <div class="stat-item" role="listitem">
+                        <div class="stat-number" aria-label="Version 0.2.0">0.2.0</div>
+                        <div class="stat-label">Current Version</div>
+                    </div>
+                    <div class="stat-item" role="listitem">
+                        <div class="stat-number" aria-label="5 plus features">5+</div>
+                        <div class="stat-label">Core Features</div>
+                    </div>
+                    <div class="stat-item" role="listitem">
+                        <div class="stat-number" aria-label="100 percent compatible">100%</div>
+                        <div class="stat-label">Browser Compatible</div>
+                    </div>
+                    <div class="stat-item" role="listitem">
+                        <div class="stat-number">Git</div>
+                        <div class="stat-label">Version Control</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section id="download" class="cta" aria-labelledby="cta-title">
+            <div class="container">
+                <h2 id="cta-title">Ready to Break Some Blocks?</h2>
+                <p>Experience the future of physics-based gaming in your browser</p>
+                <button class="btn btn-primary btn-large" aria-label="Start playing ShockTheBlock Atom now">Start Playing Now</button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" role="contentinfo">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>ShockTheBlock Atom</h4>
+                    <p>Modern physics-based block breaking game</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Technology</h4>
+                    <p>Built with modern web technologies</p>
+                    <p>Version 0.2.0</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Features</h4>
+                    <p>Physics engine, object pooling, performance monitoring</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 ShockTheBlock Atom. Built with modern web technologies.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Optimized script loading -->
+    <script src="script.js" defer></script>
+</body>
+</html>

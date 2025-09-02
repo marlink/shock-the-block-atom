@@ -17,6 +17,10 @@ let lastFpsUpdate = 0;
 let frameCount = 0;
 let isDialogOpen = false; // Flag to track dialog state
 
+// Gameplay phase variables
+let currentPhase = 1; // 1: Targeting, 2: Power, 3: Execution
+let phaseTransitioning = false; // Flag to track phase transitions
+
 // Performance monitoring
 let performanceMetrics = {
     renderTime: 0,
@@ -136,7 +140,16 @@ const angleSlider = document.getElementById('angle');
 const powerSlider = document.getElementById('power');
 const angleValue = document.getElementById('angle-value');
 const powerValue = document.getElementById('power-value');
-const fireButton = document.getElementById('fire-button');
+const moveLeftBtn = document.getElementById('move-left');
+const moveRightBtn = document.getElementById('move-right');
+const confirmPositionBtn = document.getElementById('confirm-position');
+const confirmPowerBtn = document.getElementById('confirm-power');
+const executionMessage = document.getElementById('execution-message');
+
+// Phase elements
+const phaseTargeting = document.getElementById('phase-targeting');
+const phasePower = document.getElementById('phase-power');
+const phaseExecution = document.getElementById('phase-execution');
 
 // Update angle and power display values
 angleSlider.addEventListener('input', () => {
@@ -144,7 +157,78 @@ angleSlider.addEventListener('input', () => {
 });
 
 powerSlider.addEventListener('input', () => {
-    powerValue.textContent = powerSlider.value;
+    updatePowerLevel();
+});
+
+// Update power level indicators
+function updatePowerLevel() {
+    const powerLevel = powerSlider.value;
+    powerValue.textContent = powerLevel;
+    
+    // Update power level indicators
+    document.querySelectorAll('.power-level').forEach(el => {
+        const level = parseInt(el.getAttribute('data-level'));
+        if (level <= powerLevel) {
+            el.style.opacity = '1';
+        } else {
+            el.style.opacity = '0.3';
+        }
+    });
+}
+
+// Phase management functions
+function setActivePhase(phaseNumber) {
+    if (phaseTransitioning) return;
+    phaseTransitioning = true;
+    
+    // Hide all phases with transition
+    document.querySelectorAll('.phase').forEach(phase => {
+        phase.classList.remove('active');
+    });
+    
+    // Show the active phase
+    let activePhase;
+    switch(phaseNumber) {
+        case 1:
+            activePhase = phaseTargeting;
+            break;
+        case 2:
+            activePhase = phasePower;
+            break;
+        case 3:
+            activePhase = phaseExecution;
+            break;
+    }
+    
+    // Update current phase
+    currentPhase = phaseNumber;
+    
+    // Add active class after a short delay for transition effect
+    setTimeout(() => {
+        activePhase.classList.add('active');
+        phaseTransitioning = false;
+    }, 300);
+}
+
+// Phase 1: Targeting Setup - Horizontal ball positioning
+moveLeftBtn.addEventListener('click', () => {
+    if (currentPhase === 1 && !ball.moving) {
+        ball.x = Math.max(ball.x - ball.positionStep, ball.minX);
+    }
+});
+
+moveRightBtn.addEventListener('click', () => {
+    if (currentPhase === 1 && !ball.moving) {
+        ball.x = Math.min(ball.x + ball.positionStep, ball.maxX);
+    }
+});
+
+// Confirm position and move to Phase 2
+confirmPositionBtn.addEventListener('click', () => {
+    if (currentPhase === 1 && !ball.moving) {
+        setActivePhase(2);
+        updatePowerLevel(); // Initialize power level display
+    }
 });
 
 // Ball properties
@@ -155,7 +239,11 @@ const ball = {
     color: '#ffffff',
     dx: 0,
     dy: 0,
-    moving: false
+    moving: false,
+    positionStep: 10, // Step size for horizontal positioning
+    minX: 50, // Minimum x position
+    maxX: canvas.width - 50, // Maximum x position
+    tailEffect: [] // Array to store tail particles
 };
 
 // Block properties
@@ -319,6 +407,11 @@ function checkBlockCollision() {
                 const distY = Math.abs(ball.y - (block.y + block.height / 2));
                 
                 if (distX <= (block.width / 2 + ball.radius) && distY <= (block.height / 2 + ball.radius)) {
+                    // Clear tail effect on block hit for visual clarity
+                    if (currentPhase === 3) {
+                        ball.tailEffect = [];
+                    }
+                    
                     // Check if ball hit the special zone
                     const specialZoneX = block.x + block.specialZone.offsetX;
                     const specialZoneY = block.y + block.specialZone.offsetY;
@@ -455,8 +548,49 @@ function checkLevelComplete() {
     }
 }
 
-// Draw the ball
+// Draw the ball with dynamic velocity-based tail effect
 function drawBall() {
+    // Draw tail effect if ball is moving
+    if (ball.moving && currentPhase === 3) {
+        // Calculate tail properties based on velocity
+        const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+        const tailLength = Math.min(20, Math.max(5, speed * 1.5)); // Tail length proportional to speed
+        const tailWidth = Math.min(ball.radius, Math.max(2, speed * 0.5)); // Tail width proportional to speed
+        
+        // Store current position in tail effect array
+        ball.tailEffect.unshift({x: ball.x, y: ball.y});
+        
+        // Limit tail length
+        if (ball.tailEffect.length > tailLength) {
+            ball.tailEffect.pop();
+        }
+        
+        // Draw tail
+        if (ball.tailEffect.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(ball.tailEffect[0].x, ball.tailEffect[0].y);
+            
+            for (let i = 1; i < ball.tailEffect.length; i++) {
+                ctx.lineTo(ball.tailEffect[i].x, ball.tailEffect[i].y);
+            }
+            
+            // Create gradient for tail
+            const gradient = ctx.createLinearGradient(
+                ball.tailEffect[0].x, ball.tailEffect[0].y,
+                ball.tailEffect[ball.tailEffect.length - 1].x, ball.tailEffect[ball.tailEffect.length - 1].y
+            );
+            gradient.addColorStop(0, '#ffffff');
+            gradient.addColorStop(1, 'rgba(255, 170, 0, 0)');
+            
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = tailWidth;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+        }
+    }
+    
+    // Draw the ball
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
@@ -500,18 +634,30 @@ function updateBall() {
         if (ball.x + ball.radius > canvas.width) {
             ball.x = canvas.width - ball.radius;
             ball.dx = -ball.dx * BOUNCE_FACTOR;
+            // Clear tail effect on bounce for visual clarity
+            if (currentPhase === 3) {
+                ball.tailEffect = [];
+            }
         }
         
         // Left wall
         if (ball.x - ball.radius < 0) {
             ball.x = ball.radius;
             ball.dx = -ball.dx * BOUNCE_FACTOR;
+            // Clear tail effect on bounce for visual clarity
+            if (currentPhase === 3) {
+                ball.tailEffect = [];
+            }
         }
         
         // Top wall
         if (ball.y - ball.radius < 0) {
             ball.y = ball.radius;
             ball.dy = -ball.dy * BOUNCE_FACTOR;
+            // Clear tail effect on bounce for visual clarity
+            if (currentPhase === 3) {
+                ball.tailEffect = [];
+            }
         }
         
         // Bottom wall (ball is lost)
@@ -537,6 +683,10 @@ function ballLost() {
     ball.dx = 0;
     ball.dy = 0;
     ball.moving = false;
+    ball.tailEffect = [];
+    
+    // Reset to Phase 1
+    setActivePhase(1);
     
     // Check if game over
     if (ballsLeft <= 0) {
@@ -623,6 +773,10 @@ function init() {
     ball.dx = 0;
     ball.dy = 0;
     ball.moving = false;
+    ball.tailEffect = [];
+    
+    // Reset to Phase 1
+    setActivePhase(1);
     
     // Create blocks for the first level
     createBlocks();
@@ -631,45 +785,74 @@ function init() {
     gameLoop();
 }
 
-// Fire the ball with enhanced power levels
-fireButton.addEventListener('click', () => {
+// Phase 2: Power Calibration
+confirmPowerBtn.addEventListener('click', () => {
     // Don't allow firing when dialog is open
     if (isDialogOpen) return;
     
-    if (!ball.moving && ballsLeft > 0) {
-        const angle = angleSlider.value * (Math.PI / 180);
-        const power = powerSlider.value;
+    if (currentPhase === 2 && !ball.moving && ballsLeft > 0) {
+        // Move to Phase 3: Execution
+        setActivePhase(3);
         
-        // Calculate velocity based on angle and power
-        ball.dx = power * Math.cos(angle);
-        ball.dy = -power * Math.sin(angle); // Negative because canvas Y is inverted
-        
-        // Create launch particles for visual feedback
-        if (USE_OBJECT_POOLING) {
-            const particleCount = Math.floor(power / 3) + 5; // More particles for higher power
-            for (let i = 0; i < particleCount; i++) {
-                const particle = particlePool.get();
-                
-                // Set particle properties for launch effect
-                particle.x = ball.x;
-                particle.y = ball.y;
-                particle.radius = 1 + Math.random() * 2;
-                particle.color = '#ffaa00'; // Orange-yellow for launch effect
-                particle.alpha = 1;
-                particle.life = 0;
-                particle.maxLife = 10 + Math.random() * 10;
-                
-                // Particles shoot in opposite direction of ball launch
-                const spreadAngle = angle + (Math.random() * 0.5 - 0.25); // Slight spread
-                const particlePower = power * 0.2 * (0.8 + Math.random() * 0.4);
-                particle.dx = -particlePower * Math.cos(spreadAngle) * 0.5;
-                particle.dy = particlePower * Math.sin(spreadAngle) * 0.5;
-            }
-        }
-        
-        ball.moving = true;
+        // Launch the ball automatically after a short delay
+        setTimeout(() => {
+            launchBall();
+        }, 500);
     }
 });
+
+// Launch the ball with dynamic velocity-based tail effect
+function launchBall() {
+    if (ball.moving || ballsLeft <= 0) return;
+    
+    const angle = angleSlider.value * (Math.PI / 180);
+    const powerLevel = parseInt(powerSlider.value);
+    
+    // Map power level (1-4) to actual power values (3-15)
+    const powerValues = [3, 7, 11, 15];
+    const power = powerValues[powerLevel - 1];
+    
+    // Calculate velocity based on angle and power
+    ball.dx = power * Math.cos(angle);
+    ball.dy = -power * Math.sin(angle); // Negative because canvas Y is inverted
+    
+    // Create launch particles for visual feedback
+    if (USE_OBJECT_POOLING) {
+        const particleCount = Math.floor(power / 2) + 10; // More particles for higher power
+        for (let i = 0; i < particleCount; i++) {
+            const particle = particlePool.get();
+            
+            // Set particle properties for launch effect
+            particle.x = ball.x;
+            particle.y = ball.y;
+            particle.radius = 1 + Math.random() * 2;
+            particle.color = '#ffaa00'; // Orange-yellow for launch effect
+            particle.alpha = 1;
+            particle.life = 0;
+            particle.maxLife = 10 + Math.random() * 10;
+            
+            // Particles shoot in opposite direction of ball launch
+            const spreadAngle = angle + (Math.random() * 0.5 - 0.25); // Slight spread
+            const particlePower = power * 0.2 * (0.8 + Math.random() * 0.4);
+            particle.dx = -particlePower * Math.cos(spreadAngle) * 0.5;
+            particle.dy = particlePower * Math.sin(spreadAngle) * 0.5;
+        }
+    }
+    
+    // Initialize tail effect based on power level
+    ball.tailEffect = [];
+    
+    // Set execution message based on power level
+    const powerMessages = [
+        "Low power launch...",
+        "Medium power launch...",
+        "High power launch...",
+        "Maximum power launch!"
+    ];
+    executionMessage.textContent = powerMessages[powerLevel - 1];
+    
+    ball.moving = true;
+}
 
 // Display performance metrics
 function displayPerformanceMetrics() {
@@ -728,3 +911,6 @@ window.addEventListener('error', function(event) {
         alert('Error initializing game components. Please refresh the page or check console for details.');
     }
 });
+
+// Initialize the game immediately
+init();
