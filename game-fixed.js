@@ -1,6 +1,20 @@
+/**
+ * ShockTheBlock Atom - A block-breaking game with physics
+ * Version: v0.1
+ * 
+ * Features:
+ * - Physics-based ball movement with gravity and friction
+ * - Object pooling for particle effects
+ * - Performance monitoring
+ * - Custom dialog implementation
+ */
+
 // Get canvas and context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+// Game version
+const GAME_VERSION = 'v0.1';
 
 // Game variables
 let ballsLeft = 3;
@@ -271,7 +285,7 @@ function drawBlocks() {
     // Display block count for performance monitoring
     if (ENABLE_PERFORMANCE_MONITORING) {
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`Blocks: ${visibleBlockCount}`, 10, 80);
+        ctx.fillText(`Blocks: ${visibleBlockCount}`, 10, 95);
     }
 }
 
@@ -589,18 +603,21 @@ function displayPerformanceMetrics() {
     ctx.font = '12px Arial';
     ctx.textAlign = 'left';
     
+    // Display version
+    ctx.fillText(`Version: ${GAME_VERSION}`, 10, 20);
+    
     // Display FPS
-    ctx.fillText(`FPS: ${fps}`, 10, 20);
+    ctx.fillText(`FPS: ${fps}`, 10, 35);
     
     // Display timing metrics
-    ctx.fillText(`Physics: ${performanceMetrics.physicsTime.toFixed(2)}ms`, 10, 35);
-    ctx.fillText(`Collision: ${performanceMetrics.collisionTime.toFixed(2)}ms`, 10, 50);
-    ctx.fillText(`Render: ${performanceMetrics.renderTime.toFixed(2)}ms`, 10, 65);
+    ctx.fillText(`Physics: ${performanceMetrics.physicsTime.toFixed(2)}ms`, 10, 50);
+    ctx.fillText(`Collision: ${performanceMetrics.collisionTime.toFixed(2)}ms`, 10, 65);
+    ctx.fillText(`Render: ${performanceMetrics.renderTime.toFixed(2)}ms`, 10, 80);
     
     // Display object pool stats if enabled
     if (USE_OBJECT_POOLING) {
         const stats = particlePool.getStats();
-        ctx.fillText(`Particles: ${stats.activeCount}/${stats.activeCount + stats.poolSize}`, 10, 95);
+        ctx.fillText(`Particles: ${stats.activeCount}/${stats.activeCount + stats.poolSize}`, 10, 110);
     }
 }
 
