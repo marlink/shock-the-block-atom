@@ -14,7 +14,7 @@ A block-breaking game with physics-based ball movement, particle effects, and pe
 
 ## Version Control System
 
-This project uses Git for version control with semantic versioning (v0.1, v0.2, etc.).
+This project uses Git for version control with semantic versioning (v0.2, v0.3, etc.).
 
 ### Version Display
 

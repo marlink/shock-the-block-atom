@@ -1,6 +1,6 @@
 {
   "name": "shocktheblock-atom",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A block-breaking game with physics-based ball movement, particle effects, and performance monitoring",
   "main": "index.html",
   "scripts": {

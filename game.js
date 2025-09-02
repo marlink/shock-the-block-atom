@@ -2,6 +2,9 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Game version
+const GAME_VERSION = 'v0.2';
+
 // Game variables
 let ballsLeft = 3;
 let score = 0;
@@ -12,6 +15,7 @@ let fps = 0;
 let fpsUpdateInterval = 500; // Update FPS display every 500ms
 let lastFpsUpdate = 0;
 let frameCount = 0;
+let isDialogOpen = false; // Flag to track dialog state
 
 // Performance monitoring
 let performanceMetrics = {
@@ -155,8 +159,8 @@ const ball = {
 };
 
 // Block properties
-const BLOCK_WIDTH = 60;
-const BLOCK_HEIGHT = 30;
+const BLOCK_WIDTH = 120;
+const BLOCK_HEIGHT = 120;
 const BLOCK_PADDING = 10;
 const BLOCK_OFFSET_TOP = 50;
 const BLOCK_OFFSET_LEFT = 35;
@@ -197,12 +201,21 @@ function createBlocks() {
                 const colorIndex = Math.floor(Math.random() * BLOCK_COLORS.length);
                 
                 // Create special zone within the block
+                // Allow special blocks to be positioned at edge locations
                 const specialZone = {
                     width: BLOCK_WIDTH * 0.3,
                     height: BLOCK_HEIGHT * 0.3,
-                    offsetX: BLOCK_WIDTH * (0.2 + Math.random() * 0.5),
-                    offsetY: BLOCK_HEIGHT * (0.2 + Math.random() * 0.5)
+                    offsetX: BLOCK_WIDTH * Math.random(), // Allow positioning at left edge
+                    offsetY: BLOCK_HEIGHT * Math.random() // Allow positioning at top edge
                 };
+                
+                // Ensure special zone stays within block boundaries
+                if (specialZone.offsetX + specialZone.width > BLOCK_WIDTH) {
+                    specialZone.offsetX = BLOCK_WIDTH - specialZone.width;
+                }
+                if (specialZone.offsetY + specialZone.height > BLOCK_HEIGHT) {
+                    specialZone.offsetY = BLOCK_HEIGHT - specialZone.height;
+                }
                 
                 blocks[r][c] = {
                     x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_OFFSET_LEFT,
@@ -211,7 +224,9 @@ function createBlocks() {
                     height: BLOCK_HEIGHT,
                     color: BLOCK_COLORS[colorIndex],
                     specialZone: specialZone,
-                    hit: false
+                    hit: false,
+                    hitCount: 0,  // Track number of hits for standard blocks
+                    maxHits: 3    // Standard blocks require 3 hits to destroy
                 };
             }
         }
@@ -321,9 +336,26 @@ function checkBlockCollision() {
                         destroyBlockArea(r, c, 1);
                         score += 30; // Bonus points for special zone
                     } else {
-                        // Regular hit
-                        block.hit = true;
-                        score += 10;
+                        // Regular hit - increment hit count
+                        block.hitCount++;
+                        
+                        // Check if block should be destroyed
+                        if (block.hitCount >= block.maxHits) {
+                            block.hit = true;
+                            score += 10;
+                            
+                            // Create particle effects if object pooling is enabled
+                            if (USE_OBJECT_POOLING) {
+                                createDestroyParticles(block.x + block.width/2, block.y + block.height/2, block.color);
+                            }
+                        } else {
+                            // Visual feedback for partial hits - darken the color
+                            const colorIndex = BLOCK_COLORS.indexOf(block.color);
+                            if (colorIndex >= 0 && colorIndex < BLOCK_COLORS.length - 1) {
+                                block.color = BLOCK_COLORS[colorIndex + 1];
+                            }
+                            score += 2; // Partial points for each hit
+                        }
                     }
                     
                     document.getElementById('score').textContent = score;
@@ -409,17 +441,17 @@ function checkLevelComplete() {
     if (allBlocksHit) {
         // Level complete
         currentLevel++;
-        alert(`Level ${currentLevel-1} complete! Moving to level ${currentLevel}`);
-        
-        // Reset ball position
-        ball.x = canvas.width / 2;
-        ball.y = canvas.height - 30;
-        ball.dx = 0;
-        ball.dy = 0;
-        ball.moving = false;
-        
-        // Create new blocks for the next level
-        createBlocks();
+        showDialog(`Level ${currentLevel-1} complete! Moving to level ${currentLevel}`, () => {
+            // Reset ball position
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 30;
+            ball.dx = 0;
+            ball.dy = 0;
+            ball.moving = false;
+            
+            // Create new blocks for the next level
+            createBlocks();
+        });
     }
 }
 
@@ -508,8 +540,9 @@ function ballLost() {
     
     // Check if game over
     if (ballsLeft <= 0) {
-        alert('Game Over! Your score: ' + score);
-        init(); // Restart the game
+        showDialog('Game Over! Your score: ' + score, () => {
+            init(); // Restart the game
+        });
     }
 }
 
@@ -600,6 +633,9 @@ function init() {
 
 // Fire the ball with enhanced power levels
 fireButton.addEventListener('click', () => {
+    // Don't allow firing when dialog is open
+    if (isDialogOpen) return;
+    
     if (!ball.moving && ballsLeft > 0) {
         const angle = angleSlider.value * (Math.PI / 180);
         const power = powerSlider.value;
@@ -641,13 +677,16 @@ function displayPerformanceMetrics() {
     ctx.font = '12px Arial';
     ctx.textAlign = 'left';
     
+    // Display version
+    ctx.fillText(`Version: ${GAME_VERSION}`, 10, 20);
+    
     // Display FPS
-    ctx.fillText(`FPS: ${fps}`, 10, 20);
+    ctx.fillText(`FPS: ${fps}`, 10, 35);
     
     // Display timing metrics
-    ctx.fillText(`Physics: ${performanceMetrics.physicsTime.toFixed(2)}ms`, 10, 35);
-    ctx.fillText(`Collision: ${performanceMetrics.collisionTime.toFixed(2)}ms`, 10, 50);
-    ctx.fillText(`Render: ${performanceMetrics.renderTime.toFixed(2)}ms`, 10, 65);
+    ctx.fillText(`Physics: ${performanceMetrics.physicsTime.toFixed(2)}ms`, 10, 50);
+    ctx.fillText(`Collision: ${performanceMetrics.collisionTime.toFixed(2)}ms`, 10, 65);
+    ctx.fillText(`Render: ${performanceMetrics.renderTime.toFixed(2)}ms`, 10, 80);
     
     // Display object pool stats if enabled
     if (USE_OBJECT_POOLING) {
@@ -658,6 +697,29 @@ function displayPerformanceMetrics() {
 
 // Initialize the game when the page loads
 window.addEventListener('load', init);
+
+// Custom dialog functions
+const customDialog = document.getElementById('custom-dialog');
+const dialogMessage = document.getElementById('dialog-message');
+const dialogOkBtn = document.getElementById('dialog-ok-btn');
+
+// Show custom dialog instead of alert
+function showDialog(message, callback) {
+    isDialogOpen = true;
+    dialogMessage.textContent = message;
+    customDialog.classList.remove('hidden');
+    
+    // Remove any existing event listeners to prevent duplicates
+    const newOkBtn = dialogOkBtn.cloneNode(true);
+    dialogOkBtn.parentNode.replaceChild(newOkBtn, dialogOkBtn);
+    
+    // Add click event listener to OK button
+    newOkBtn.addEventListener('click', () => {
+        customDialog.classList.add('hidden');
+        isDialogOpen = false;
+        if (callback) callback();
+    });
+}
 
 // Add error handling for ObjectPool initialization
 window.addEventListener('error', function(event) {
