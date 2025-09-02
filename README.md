@@ -29,10 +29,19 @@ Version information is embedded in:
 
 ### Git Hooks
 
-The project includes Git hooks for version automation:
+The project includes Git hooks for version automation and GitHub synchronization:
 
 1. **post-tag**: Automatically updates version numbers in all files when a new tag is created
 2. **pre-commit**: Ensures version numbers are consistent across all files
+3. **post-commit**: Automatically pushes changes to GitHub after successful local commits
+
+### GitHub Synchronization
+
+This project includes automated GitHub synchronization that:
+- Automatically pushes changes to GitHub after each commit
+- Ensures all pending changes are pushed when a session ends
+- Provides status notifications for successful synchronization
+- Handles connection issues and authentication failures gracefully
 
 ## Automated Version Tracking
 
@@ -66,6 +75,28 @@ git gcommit -m "save session: implemented feature X"
 To verify version synchronization across files:
 ```bash
 npm run version-check
+```
+
+### GitHub Synchronization Commands
+
+To check the status of GitHub synchronization:
+```bash
+npm run sync-status
+```
+
+To view detailed synchronization logs:
+```bash
+npm run sync-verbose
+```
+
+To manually push changes to GitHub:
+```bash
+npm run sync-now
+```
+
+To install or update the Git hooks for GitHub synchronization:
+```bash
+bash install-git-hooks.sh
 ```
 
 ### Creating a New Version

@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Post-commit hook for ShockTheBlock Atom game
+# Automatically synchronizes changes with GitHub after successful local commits
+
+# Configuration
+REMOTE="origin"
+BRANCH=$(git symbolic-ref --short HEAD)
+LOG_FILE=".git/github-sync.log"
+NOTIFICATION_FILE=".git/last-sync-status.txt"
+
+# Function to log messages with timestamps
+log_message() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" >> "$LOG_FILE"
+    echo "$1"
+}
+
+# Function to update notification status
+update_status() {
+    echo "$1" > "$NOTIFICATION_FILE"
+}
+
+# Function to handle errors
+handle_error() {
+    local error_msg="$1"
+    local error_code="$2"
+    
+    log_message "ERROR: $error_msg (Code: $error_code)"
+    update_status "SYNC FAILED: $error_msg"
+    
+    # Send desktop notification if available
+    if command -v osascript &> /dev/null; then
+        osascript -e "display notification \"$error_msg\" with title \"GitHub Sync Failed\" subtitle \"ShockTheBlock Atom\" sound name \"Basso\""
+    fi
+    
+    exit $error_code
+}
+
+# Main execution
+log_message "Starting GitHub synchronization..."
+update_status "SYNC IN PROGRESS"
+
+# Check if remote exists
+if ! git remote get-url "$REMOTE" &> /dev/null; then
+    handle_error "Remote '$REMOTE' not configured" 1
+fi
+
+# Check network connectivity to GitHub
+if ! ping -c 1 github.com &> /dev/null; then
+    handle_error "Cannot connect to GitHub. Check your internet connection" 2
+fi
+
+# Try to push changes to GitHub
+log_message "Pushing changes to $REMOTE/$BRANCH..."
+
+if ! push_output=$(git push "$REMOTE" "$BRANCH" 2>&1); then
+    # Check for authentication issues
+    if echo "$push_output" | grep -i "authentication" > /dev/null; then
+        handle_error "Authentication failed. Please check your GitHub credentials" 3
+    # Check for conflicts
+    elif echo "$push_output" | grep -i "conflict" > /dev/null; then
+        handle_error "Push rejected due to conflicts. Pull latest changes first" 4
+    # Generic error
+    else
+        handle_error "Failed to push to GitHub: $push_output" 5
+    fi
+fi
+
+# Success
+log_message "Successfully synchronized changes with GitHub"
+update_status "SYNC SUCCESSFUL: $(date '+%Y-%m-%d %H:%M:%S')"
+
+# Send desktop notification if available
+if command -v osascript &> /dev/null; then
+    osascript -e "display notification \"Changes successfully pushed to GitHub\" with title \"GitHub Sync Complete\" subtitle \"ShockTheBlock Atom\" sound name \"Glass\""
+fi
+
+exit 0

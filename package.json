@@ -5,7 +5,11 @@
   "main": "index.html",
   "scripts": {
     "precommit": "node verify_version_sync.js",
-    "version-check": "node verify_version_sync.js"
+    "version-check": "node verify_version_sync.js",
+    "postsession": "bash session-end-sync.sh",
+    "sync-status": "bash check-sync-status.sh",
+    "sync-verbose": "bash check-sync-status.sh --verbose",
+    "sync-now": "git push origin HEAD"
   },
   "keywords": [
     "game",
