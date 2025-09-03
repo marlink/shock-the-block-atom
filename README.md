@@ -2,7 +2,7 @@
 
 ## Version: v0.3
 
-A block-breaking game with physics-based ball movement, particle effects, and performance monitoring.
+A block-breaking game with physics-based ball movement, particle effects, performance monitoring, and database integration for high scores.
 
 ## Features
 
@@ -12,6 +12,8 @@ A block-breaking game with physics-based ball movement, particle effects, and pe
 - Custom dialog implementation
 - Git-based version tracking
 - Three-phase gameplay flow (Targeting, Power Calibration, Execution)
+- High score tracking with PostgreSQL database integration
+- Player statistics and leaderboard
 
 ## Version Control System
 
@@ -48,6 +50,37 @@ This project includes automated GitHub synchronization that:
 
 This project includes an automated version tracking system that:
 - Automatically generates summary files in the `manual-version-tracker` directory
+
+## Database Integration
+
+### Setup Instructions
+
+1. Ensure PostgreSQL client tools are properly installed on your local machine
+2. Navigate to the server directory and install dependencies:
+   ```
+   cd server
+   npm install
+   ```
+3. Initialize the database:
+   ```
+   node init-db.js
+   ```
+4. Start the game using the provided script (this will start the server and open the game in your browser):
+   ```
+   ./start-game.sh
+   ```
+   
+   Alternatively, you can manually:
+   - Start the server: `cd server && node server.js`
+   - Open `index.html` in your browser
+
+### Database Features
+
+- High scores are stored in a PostgreSQL database hosted on Neon
+- Player statistics tracking
+- Leaderboard functionality
+- The server provides API endpoints for retrieving and saving scores
+- The client communicates with the server using the GameAPI class
 - Increments version numbers when session-ending keywords are detected in commit messages
 - Maintains synchronization between version tags and folder names
 

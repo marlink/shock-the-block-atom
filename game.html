@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!--
+    ShockTheBlock Atom - A block-breaking game with physics
+    Version: v0.3
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShockTheBlock Atom - Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>ShockTheBlock Atom</h1>
+        <div class="game-stats">
+            <div class="balls-left">Balls: <span id="balls-count">3</span></div>
+            <div class="score">Score: <span id="score">0</span></div>
+        </div>
+        <canvas id="gameCanvas" width="1000" height="800"></canvas>
+        <div class="game-phases">
+            <!-- Phase 1: Targeting Setup -->
+            <div class="phase phase-1 active" id="phase-targeting">
+                <div class="phase-header">
+                    <h3>Phase 1: Targeting</h3>
+                    <div class="phase-indicator">●</div>
+                </div>
+                <div class="phase-content">
+                    <div class="position-control">
+                        <label for="position">Position:</label>
+                        <div class="position-buttons">
+                            <button id="move-left">◀</button>
+                            <button id="move-right">▶</button>
+                        </div>
+                        <button id="confirm-position">Confirm Position</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Phase 2: Power Calibration -->
+            <div class="phase phase-2" id="phase-power">
+                <div class="phase-header">
+                    <h3>Phase 2: Power</h3>
+                    <div class="phase-indicator">●</div>
+                </div>
+                <div class="phase-content">
+                    <div class="angle-control">
+                        <label for="angle">Angle:</label>
+                        <input type="range" id="angle" min="0" max="180" value="90">
+                        <span id="angle-value">90°</span>
+                    </div>
+                    <div class="power-control">
+                        <label for="power">Power:</label>
+                        <input type="range" id="power" min="1" max="4" value="2">
+                        <div class="power-levels">
+                            <div class="power-level" data-level="1">1</div>
+                            <div class="power-level" data-level="2">2</div>
+                            <div class="power-level" data-level="3">3</div>
+                            <div class="power-level" data-level="4">4</div>
+                        </div>
+                        <span id="power-value">2</span>
+                    </div>
+                    <button id="confirm-power">Confirm Power</button>
+                </div>
+            </div>
+            
+            <!-- Phase 3: Execution -->
+            <div class="phase phase-3" id="phase-execution">
+                <div class="phase-header">
+                    <h3>Phase 3: Execution</h3>
+                    <div class="phase-indicator">●</div>
+                </div>
+                <div class="phase-content">
+                    <div class="execution-status">
+                        <span id="execution-message">Ball in motion...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Ball counter UI element -->
+        <div class="ball-counter-container">
+            <div class="ball-counter">
+                <div class="ball ball-used" id="ball-1">●</div>
+                <div class="ball" id="ball-2">●</div>
+                <div class="ball" id="ball-3">●</div>
+            </div>
+            <div class="ball-status-message hidden" id="ball-status-message">No balls remaining</div>
+        </div>
+        
+        <!-- Custom dialog component -->
+        <div id="custom-dialog" class="custom-dialog hidden">
+            <div class="dialog-content">
+                <p id="dialog-message"></p>
+                <button id="dialog-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- High Scores Modal -->
+    <div id="high-scores-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>High Scores</h2>
+            <div id="high-scores-list">
+                <div class="loading">Loading scores...</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Player Name Modal -->
+    <div id="player-name-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2>Game Over</h2>
+            <p>Your score: <span id="final-score">0</span></p>
+            <div class="player-name-input">
+                <label for="player-name">Enter your name:</label>
+                <input type="text" id="player-name" maxlength="20">
+                <button id="save-score-btn">Save Score</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="back-to-home">
+        <a href="index-landing.html">← Back to Home</a>
+    </div>
+    
+    <script src="js/api.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>

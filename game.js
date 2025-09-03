@@ -689,11 +689,43 @@ function ballLost() {
     setActivePhase(1);
     
     // Check if game over
-    if (ballsLeft <= 0) {
-        showDialog('Game Over! Your score: ' + score, () => {
-            init(); // Restart the game
-        });
-    }
+if (ballsLeft <= 0) {
+    // Show player name modal instead of dialog
+    const playerNameModal = document.getElementById('player-name-modal');
+    const finalScoreElement = document.getElementById('final-score');
+    finalScoreElement.textContent = score;
+    playerNameModal.classList.remove('hidden');
+    
+    // Handle save score button
+    const saveScoreBtn = document.getElementById('save-score-btn');
+    const playerNameInput = document.getElementById('player-name');
+    
+    // Remove previous event listeners if any
+    const newSaveScoreBtn = saveScoreBtn.cloneNode(true);
+    saveScoreBtn.parentNode.replaceChild(newSaveScoreBtn, saveScoreBtn);
+    
+    newSaveScoreBtn.addEventListener('click', () => {
+        const playerName = playerNameInput.value.trim();
+        if (playerName) {
+            // Save score to database
+            const gameApi = new GameAPI();
+            gameApi.saveScore(playerName, score, 1) // Level 1 for now
+                .then(() => {
+                    playerNameModal.classList.add('hidden');
+                    showHighScores();
+                })
+                .catch(error => {
+                    console.error('Error saving score:', error);
+                    showDialog('Error saving score. Please try again.', () => {
+                        playerNameModal.classList.add('hidden');
+                        init(); // Restart the game
+                    });
+                });
+        } else {
+            alert('Please enter your name');
+        }
+    });
+}
 }
 
 // Clear the canvas
@@ -912,5 +944,71 @@ window.addEventListener('error', function(event) {
     }
 });
 
+// Function to show high scores
+function showHighScores() {
+    const highScoresModal = document.getElementById('high-scores-modal');
+    const highScoresList = document.getElementById('high-scores-list');
+    highScoresModal.classList.remove('hidden');
+    
+    // Show loading message
+    highScoresList.innerHTML = '<div class="loading">Loading scores...</div>';
+    
+    // Fetch high scores from the server
+    const gameApi = new GameAPI();
+    gameApi.getHighScores()
+        .then(scores => {
+            if (scores && scores.length > 0) {
+                // Create HTML for high scores
+                let html = '<table class="high-scores-table">';
+                html += '<tr><th>Rank</th><th>Player</th><th>Score</th></tr>';
+                
+                scores.forEach((score, index) => {
+                    html += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${score.player_name}</td>
+                        <td>${score.score}</td>
+                    </tr>`;
+                });
+                
+                html += '</table>';
+                highScoresList.innerHTML = html;
+            } else {
+                highScoresList.innerHTML = '<p>No high scores yet. Be the first!</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching high scores:', error);
+            highScoresList.innerHTML = '<p>Error loading high scores. Please try again later.</p>';
+        });
+    
+    // Close button functionality
+    const closeButton = highScoresModal.querySelector('.close-button');
+    const newCloseButton = closeButton.cloneNode(true);
+    closeButton.parentNode.replaceChild(newCloseButton, closeButton);
+    
+    newCloseButton.addEventListener('click', () => {
+        highScoresModal.classList.add('hidden');
+        init(); // Restart the game
+    });
+}
+
+// Add a button to show high scores
+function addHighScoresButton() {
+    const gameStats = document.querySelector('.game-stats');
+    
+    // Create high scores button if it doesn't exist
+    if (!document.getElementById('high-scores-btn')) {
+        const highScoresBtn = document.createElement('div');
+        highScoresBtn.id = 'high-scores-btn';
+        highScoresBtn.className = 'high-scores-btn';
+        highScoresBtn.textContent = 'High Scores';
+        highScoresBtn.addEventListener('click', showHighScores);
+        gameStats.appendChild(highScoresBtn);
+    }
+}
+
 // Initialize the game immediately
 init();
+
+// Add high scores button after initialization
+addHighScoresButton();
