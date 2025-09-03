@@ -72,7 +72,12 @@ document.addEventListener('DOMContentLoaded', function() {
         particle.style.left = Math.random() * 100 + '%';
         particle.style.top = Math.random() * 100 + '%';
         particle.style.animationDelay = Math.random() * 6 + 's';
-        document.querySelector('.hero-background').appendChild(particle);
+        
+        // Fix: Use .hero-bg instead of .hero-background
+        const heroElement = document.querySelector('.hero-bg');
+        if (heroElement) {
+            heroElement.appendChild(particle);
+        }
         
         // Remove particle after animation
         setTimeout(() => {

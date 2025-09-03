@@ -6,7 +6,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ShockTheBlock Atom - Game</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -15,10 +15,10 @@
         <h1>ShockTheBlock Atom</h1>
         <div class="game-stats">
             <div class="balls-left">Balls: <span id="balls-count">3</span></div>
-            <div class="score">Score: <span id="score">0</span></div>
         </div>
-        <canvas id="gameCanvas" width="1000" height="800"></canvas>
-        <div class="game-phases">
+        <div style="position: relative; flex: 1; display: flex;">
+            <canvas id="gameCanvas" width="1000" height="800"></canvas>
+            <div class="game-phases">
             <!-- Phase 1: Targeting Setup -->
             <div class="phase phase-1 active" id="phase-targeting">
                 <div class="phase-header">
@@ -77,6 +77,7 @@
                 </div>
             </div>
         </div>
+        </div>
         
         <!-- Ball counter UI element -->
         <div class="ball-counter-container">
@@ -97,35 +98,12 @@
         </div>
     </div>
     
-    <!-- High Scores Modal -->
-    <div id="high-scores-modal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>High Scores</h2>
-            <div id="high-scores-list">
-                <div class="loading">Loading scores...</div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Player Name Modal -->
-    <div id="player-name-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2>Game Over</h2>
-            <p>Your score: <span id="final-score">0</span></p>
-            <div class="player-name-input">
-                <label for="player-name">Enter your name:</label>
-                <input type="text" id="player-name" maxlength="20">
-                <button id="save-score-btn">Save Score</button>
-            </div>
-        </div>
-    </div>
-    
     <div class="back-to-home">
-        <a href="index-landing.html">← Back to Home</a>
+        <a href="index.html">← Back to Home</a>
     </div>
     
-    <script src="js/api.js"></script>
-    <script src="game.js"></script>
+    <script src="js/prevent-zoom.js?v=1"></script>
+    <script src="js/api.js?v=1"></script>
+    <script src="game.js?v=1"></script>
 </body>
 </html>

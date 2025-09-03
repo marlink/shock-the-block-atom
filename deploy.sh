@@ -23,7 +23,7 @@ cp -r ./server/.env.example "$SERVER_DIR/.env.example"
 
 # Copy client files
 echo "Copying client files..."
-cp ./index-landing.html "$CLIENT_DIR/index.html"
+cp ./index.html "$CLIENT_DIR/index.html"
 cp ./game.html "$CLIENT_DIR/"
 cp ./game.js "$CLIENT_DIR/"
 cp ./styles.css "$CLIENT_DIR/"

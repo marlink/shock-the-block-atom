@@ -33,78 +33,7 @@ class GameAPI {
     return `https://api.${hostname}/api`;
   }
 
-  /**
-   * Get high scores from the server
-   * @returns {Promise<Array>} Array of high score objects
-   */
-  async getHighScores() {
-    try {
-      const response = await fetch(`${this.baseURL}/scores`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching high scores:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Save a player's score to the server
-   * @param {string} playerName - The name of the player
-   * @param {number} score - The player's score
-   * @param {number} levelReached - The highest level reached
-   * @returns {Promise<Object>} The saved score object
-   */
-  async saveScore(playerName, score, levelReached) {
-    try {
-      const response = await fetch(`${this.baseURL}/scores`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          player_name: playerName,
-          score,
-          level_reached: levelReached
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error saving score:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Get stats for a specific player
-   * @param {string} playerName - The name of the player
-   * @returns {Promise<Object>} Player stats object
-   */
-  async getPlayerStats(playerName) {
-    try {
-      const response = await fetch(`${this.baseURL}/players/${encodeURIComponent(playerName)}`);
-      
-      if (response.status === 404) {
-        return null; // Player not found
-      }
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching player stats:', error);
-      return null;
-    }
-  }
+  // API methods can be added here as needed for future features
 }
 
 // Export the API service

@@ -217,3 +217,25 @@ body { font-size: var(--fs-md); }
 .cta p { font-size: var(--fs-md); }
 /* Ensure version badge uses variable sizing */
 .version-badge { font: 500 var(--fs-sm) 'JetBrains Mono', monospace; }
+
+/* Fix hero section interaction issues */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* Behind interactive content */
+  pointer-events: none; /* Prevent click interception */
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 2; /* Above background elements */
+}
+
+/* Ensure orbs don't interfere with interactions */
+.hero-bg .orb {
+  pointer-events: none; /* Critical: prevents click blocking */
+}
+
+.hero-bg .grain {
+  pointer-events: none; /* Also fix grain texture */
+}

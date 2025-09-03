@@ -1,13 +1,24 @@
+/**
+ * ShockTheBlock Atom - A block-breaking game with physics
+ * Version: v0.3
+ * 
+ * Features:
+ * - Physics-based ball movement with gravity and friction
+ * - Object pooling for particle effects
+ * - Performance monitoring
+ * - Custom dialog implementation
+ * - Three-phase gameplay flow
+ */
+
 // Get canvas and context
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 // Game version
-const GAME_VERSION = 'v0.2';
+const GAME_VERSION = 'v0.3';
 
 // Game variables
 let ballsLeft = 3;
-let score = 0;
 let gameRunning = false;
 let currentLevel = 1;
 let lastFrameTime = 0;
@@ -16,10 +27,7 @@ let fpsUpdateInterval = 500; // Update FPS display every 500ms
 let lastFpsUpdate = 0;
 let frameCount = 0;
 let isDialogOpen = false; // Flag to track dialog state
-
-// Gameplay phase variables
-let currentPhase = 1; // 1: Targeting, 2: Power, 3: Execution
-let phaseTransitioning = false; // Flag to track phase transitions
+let ballsUsed = 0; // Track how many balls have been used
 
 // Performance monitoring
 let performanceMetrics = {
@@ -140,16 +148,10 @@ const angleSlider = document.getElementById('angle');
 const powerSlider = document.getElementById('power');
 const angleValue = document.getElementById('angle-value');
 const powerValue = document.getElementById('power-value');
-const moveLeftBtn = document.getElementById('move-left');
-const moveRightBtn = document.getElementById('move-right');
 const confirmPositionBtn = document.getElementById('confirm-position');
 const confirmPowerBtn = document.getElementById('confirm-power');
-const executionMessage = document.getElementById('execution-message');
-
-// Phase elements
-const phaseTargeting = document.getElementById('phase-targeting');
-const phasePower = document.getElementById('phase-power');
-const phaseExecution = document.getElementById('phase-execution');
+const moveLeftBtn = document.getElementById('move-left');
+const moveRightBtn = document.getElementById('move-right');
 
 // Update angle and power display values
 angleSlider.addEventListener('input', () => {
@@ -157,99 +159,24 @@ angleSlider.addEventListener('input', () => {
 });
 
 powerSlider.addEventListener('input', () => {
-    updatePowerLevel();
-});
-
-// Update power level indicators
-function updatePowerLevel() {
-    const powerLevel = powerSlider.value;
-    powerValue.textContent = powerLevel;
-    
-    // Update power level indicators
-    document.querySelectorAll('.power-level').forEach(el => {
-        const level = parseInt(el.getAttribute('data-level'));
-        if (level <= powerLevel) {
-            el.style.opacity = '1';
-        } else {
-            el.style.opacity = '0.3';
-        }
-    });
-}
-
-// Phase management functions
-function setActivePhase(phaseNumber) {
-    if (phaseTransitioning) return;
-    phaseTransitioning = true;
-    
-    // Hide all phases with transition
-    document.querySelectorAll('.phase').forEach(phase => {
-        phase.classList.remove('active');
-    });
-    
-    // Show the active phase
-    let activePhase;
-    switch(phaseNumber) {
-        case 1:
-            activePhase = phaseTargeting;
-            break;
-        case 2:
-            activePhase = phasePower;
-            break;
-        case 3:
-            activePhase = phaseExecution;
-            break;
-    }
-    
-    // Update current phase
-    currentPhase = phaseNumber;
-    
-    // Add active class after a short delay for transition effect
-    setTimeout(() => {
-        activePhase.classList.add('active');
-        phaseTransitioning = false;
-    }, 300);
-}
-
-// Phase 1: Targeting Setup - Horizontal ball positioning
-moveLeftBtn.addEventListener('click', () => {
-    if (currentPhase === 1 && !ball.moving) {
-        ball.x = Math.max(ball.x - ball.positionStep, ball.minX);
-    }
-});
-
-moveRightBtn.addEventListener('click', () => {
-    if (currentPhase === 1 && !ball.moving) {
-        ball.x = Math.min(ball.x + ball.positionStep, ball.maxX);
-    }
-});
-
-// Confirm position and move to Phase 2
-confirmPositionBtn.addEventListener('click', () => {
-    if (currentPhase === 1 && !ball.moving) {
-        setActivePhase(2);
-        updatePowerLevel(); // Initialize power level display
-    }
+    powerValue.textContent = powerSlider.value;
 });
 
 // Ball properties
 const ball = {
     x: canvas.width / 2,
-    y: canvas.height - 30,
-    radius: 10,
+    y: canvas.height - 40,
+    radius: 15, // Increased ball size to match larger blocks
     color: '#ffffff',
     dx: 0,
     dy: 0,
-    moving: false,
-    positionStep: 10, // Step size for horizontal positioning
-    minX: 50, // Minimum x position
-    maxX: canvas.width - 50, // Maximum x position
-    tailEffect: [] // Array to store tail particles
+    moving: false
 };
 
 // Block properties
 const BLOCK_WIDTH = 120;
 const BLOCK_HEIGHT = 120;
-const BLOCK_PADDING = 10;
+const BLOCK_PADDING = 20; // Increased padding for larger blocks
 const BLOCK_OFFSET_TOP = 50;
 const BLOCK_OFFSET_LEFT = 35;
 
@@ -269,9 +196,9 @@ let blocks = [];
 function createBlocks() {
     blocks = [];
     
-    // Determine grid dimensions based on level
-    const rows = Math.min(3 + Math.floor(currentLevel / 2), 8);
-    const columns = Math.min(5 + Math.floor(currentLevel / 3), 10);
+    // Determine grid dimensions based on level - adjusted for larger blocks
+    const rows = Math.min(2 + Math.floor(currentLevel / 2), 5);
+    const columns = Math.min(3 + Math.floor(currentLevel / 3), 6);
     
     // Calculate complexity factors
     const gapProbability = Math.min(0.1 + (currentLevel * 0.05), 0.4); // Chance of a gap in the grid
@@ -289,21 +216,12 @@ function createBlocks() {
                 const colorIndex = Math.floor(Math.random() * BLOCK_COLORS.length);
                 
                 // Create special zone within the block
-                // Allow special blocks to be positioned at edge locations
                 const specialZone = {
-                    width: BLOCK_WIDTH * 0.3,
-                    height: BLOCK_HEIGHT * 0.3,
-                    offsetX: BLOCK_WIDTH * Math.random(), // Allow positioning at left edge
-                    offsetY: BLOCK_HEIGHT * Math.random() // Allow positioning at top edge
+                    width: BLOCK_WIDTH * 0.4,
+                    height: BLOCK_HEIGHT * 0.4,
+                    offsetX: BLOCK_WIDTH * (0.3 + Math.random() * 0.3), // Adjusted to keep special zone fully within block
+                    offsetY: BLOCK_HEIGHT * (0.3 + Math.random() * 0.3) // Adjusted to keep special zone fully within block
                 };
-                
-                // Ensure special zone stays within block boundaries
-                if (specialZone.offsetX + specialZone.width > BLOCK_WIDTH) {
-                    specialZone.offsetX = BLOCK_WIDTH - specialZone.width;
-                }
-                if (specialZone.offsetY + specialZone.height > BLOCK_HEIGHT) {
-                    specialZone.offsetY = BLOCK_HEIGHT - specialZone.height;
-                }
                 
                 blocks[r][c] = {
                     x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_OFFSET_LEFT,
@@ -312,9 +230,7 @@ function createBlocks() {
                     height: BLOCK_HEIGHT,
                     color: BLOCK_COLORS[colorIndex],
                     specialZone: specialZone,
-                    hit: false,
-                    hitCount: 0,  // Track number of hits for standard blocks
-                    maxHits: 3    // Standard blocks require 3 hits to destroy
+                    hit: false
                 };
             }
         }
@@ -373,7 +289,7 @@ function drawBlocks() {
     // Display block count for performance monitoring
     if (ENABLE_PERFORMANCE_MONITORING) {
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(`Blocks: ${visibleBlockCount}`, 10, 80);
+        ctx.fillText(`Blocks: ${visibleBlockCount}`, 10, 95);
     }
 }
 
@@ -407,11 +323,6 @@ function checkBlockCollision() {
                 const distY = Math.abs(ball.y - (block.y + block.height / 2));
                 
                 if (distX <= (block.width / 2 + ball.radius) && distY <= (block.height / 2 + ball.radius)) {
-                    // Clear tail effect on block hit for visual clarity
-                    if (currentPhase === 3) {
-                        ball.tailEffect = [];
-                    }
-                    
                     // Check if ball hit the special zone
                     const specialZoneX = block.x + block.specialZone.offsetX;
                     const specialZoneY = block.y + block.specialZone.offsetY;
@@ -427,31 +338,10 @@ function checkBlockCollision() {
                     if (hitSpecialZone) {
                         // Special zone hit - destroy blocks in a 3x3 area
                         destroyBlockArea(r, c, 1);
-                        score += 30; // Bonus points for special zone
                     } else {
-                        // Regular hit - increment hit count
-                        block.hitCount++;
-                        
-                        // Check if block should be destroyed
-                        if (block.hitCount >= block.maxHits) {
-                            block.hit = true;
-                            score += 10;
-                            
-                            // Create particle effects if object pooling is enabled
-                            if (USE_OBJECT_POOLING) {
-                                createDestroyParticles(block.x + block.width/2, block.y + block.height/2, block.color);
-                            }
-                        } else {
-                            // Visual feedback for partial hits - darken the color
-                            const colorIndex = BLOCK_COLORS.indexOf(block.color);
-                            if (colorIndex >= 0 && colorIndex < BLOCK_COLORS.length - 1) {
-                                block.color = BLOCK_COLORS[colorIndex + 1];
-                            }
-                            score += 2; // Partial points for each hit
-                        }
+                        // Regular hit
+                        block.hit = true;
                     }
-                    
-                    document.getElementById('score').textContent = score;
                     
                     // Determine bounce direction
                     if (distX > distY) {
@@ -481,7 +371,6 @@ function destroyBlockArea(centerRow, centerCol, radius) {
             if (blocks[r][c] && !blocks[r][c].hit) {
                 const block = blocks[r][c];
                 block.hit = true;
-                score += 5; // Points for each destroyed block
                 
                 // Create particle effects if object pooling is enabled
                 if (USE_OBJECT_POOLING) {
@@ -490,12 +379,11 @@ function destroyBlockArea(centerRow, centerCol, radius) {
             }
         }
     }
-    document.getElementById('score').textContent = score;
 }
 
 // Create particle effects when a block is destroyed
 function createDestroyParticles(x, y, color) {
-    const particleCount = 15;
+    const particleCount = 30; // Increased particle count for larger blocks
     
     for (let i = 0; i < particleCount; i++) {
         const particle = particlePool.get();
@@ -503,11 +391,11 @@ function createDestroyParticles(x, y, color) {
         // Set particle properties
         particle.x = x;
         particle.y = y;
-        particle.radius = 1 + Math.random() * 3;
+        particle.radius = 2 + Math.random() * 5; // Larger particles for better visibility
         particle.color = color;
         particle.alpha = 1;
         particle.life = 0;
-        particle.maxLife = 20 + Math.random() * 20;
+        particle.maxLife = 30 + Math.random() * 30; // Longer lifetime for particles
         
         // Random velocity
         const angle = Math.random() * Math.PI * 2;
@@ -531,66 +419,27 @@ function checkLevelComplete() {
         if (!allBlocksHit) break;
     }
     
+    // Replace this in the level completion code:
     if (allBlocksHit) {
-        // Level complete
-        currentLevel++;
-        showDialog(`Level ${currentLevel-1} complete! Moving to level ${currentLevel}`, () => {
-            // Reset ball position
-            ball.x = canvas.width / 2;
-            ball.y = canvas.height - 30;
-            ball.dx = 0;
-            ball.dy = 0;
-            ball.moving = false;
-            
-            // Create new blocks for the next level
-            createBlocks();
-        });
-    }
+    // Level complete
+    currentLevel++;
+    showDialog(`Level ${currentLevel-1} complete! Moving to level ${currentLevel}`, () => {
+        // Reset ball position
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height - 30;
+        ball.dx = 0;
+        ball.dy = 0;
+        ball.moving = false;
+        
+        // Continue with level setup...
+    });
 }
 
-// Draw the ball with dynamic velocity-based tail effect
+
+}
+
+// Draw the ball
 function drawBall() {
-    // Draw tail effect if ball is moving
-    if (ball.moving && currentPhase === 3) {
-        // Calculate tail properties based on velocity
-        const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
-        const tailLength = Math.min(20, Math.max(5, speed * 1.5)); // Tail length proportional to speed
-        const tailWidth = Math.min(ball.radius, Math.max(2, speed * 0.5)); // Tail width proportional to speed
-        
-        // Store current position in tail effect array
-        ball.tailEffect.unshift({x: ball.x, y: ball.y});
-        
-        // Limit tail length
-        if (ball.tailEffect.length > tailLength) {
-            ball.tailEffect.pop();
-        }
-        
-        // Draw tail
-        if (ball.tailEffect.length > 1) {
-            ctx.beginPath();
-            ctx.moveTo(ball.tailEffect[0].x, ball.tailEffect[0].y);
-            
-            for (let i = 1; i < ball.tailEffect.length; i++) {
-                ctx.lineTo(ball.tailEffect[i].x, ball.tailEffect[i].y);
-            }
-            
-            // Create gradient for tail
-            const gradient = ctx.createLinearGradient(
-                ball.tailEffect[0].x, ball.tailEffect[0].y,
-                ball.tailEffect[ball.tailEffect.length - 1].x, ball.tailEffect[ball.tailEffect.length - 1].y
-            );
-            gradient.addColorStop(0, '#ffffff');
-            gradient.addColorStop(1, 'rgba(255, 170, 0, 0)');
-            
-            ctx.strokeStyle = gradient;
-            ctx.lineWidth = tailWidth;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.stroke();
-        }
-    }
-    
-    // Draw the ball
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
     ctx.fillStyle = ball.color;
@@ -634,30 +483,18 @@ function updateBall() {
         if (ball.x + ball.radius > canvas.width) {
             ball.x = canvas.width - ball.radius;
             ball.dx = -ball.dx * BOUNCE_FACTOR;
-            // Clear tail effect on bounce for visual clarity
-            if (currentPhase === 3) {
-                ball.tailEffect = [];
-            }
         }
         
         // Left wall
         if (ball.x - ball.radius < 0) {
             ball.x = ball.radius;
             ball.dx = -ball.dx * BOUNCE_FACTOR;
-            // Clear tail effect on bounce for visual clarity
-            if (currentPhase === 3) {
-                ball.tailEffect = [];
-            }
         }
         
         // Top wall
         if (ball.y - ball.radius < 0) {
             ball.y = ball.radius;
             ball.dy = -ball.dy * BOUNCE_FACTOR;
-            // Clear tail effect on bounce for visual clarity
-            if (currentPhase === 3) {
-                ball.tailEffect = [];
-            }
         }
         
         // Bottom wall (ball is lost)
@@ -667,7 +504,11 @@ function updateBall() {
         
         // Stop the ball if it's moving too slow
         if (Math.abs(ball.dx) < 0.1 && Math.abs(ball.dy) < 0.1 && ball.y > canvas.height / 2) {
-            ballLost();
+            ball.dx = 0;
+            ball.dy = 0;
+            ball.moving = false;
+            currentPhase = 1;
+            updatePhaseUI();
         }
     }
 }
@@ -675,57 +516,36 @@ function updateBall() {
 // Handle lost ball
 function ballLost() {
     ballsLeft--;
+    ballsUsed++;
     document.getElementById('balls-count').textContent = ballsLeft;
     
-    // Reset ball position
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height - 30;
-    ball.dx = 0;
-    ball.dy = 0;
-    ball.moving = false;
-    ball.tailEffect = [];
+    // Update ball counter UI
+    updateBallCounterUI();
     
-    // Reset to Phase 1
-    setActivePhase(1);
-    
-    // Check if game over
-if (ballsLeft <= 0) {
-    // Show player name modal instead of dialog
-    const playerNameModal = document.getElementById('player-name-modal');
-    const finalScoreElement = document.getElementById('final-score');
-    finalScoreElement.textContent = score;
-    playerNameModal.classList.remove('hidden');
-    
-    // Handle save score button
-    const saveScoreBtn = document.getElementById('save-score-btn');
-    const playerNameInput = document.getElementById('player-name');
-    
-    // Remove previous event listeners if any
-    const newSaveScoreBtn = saveScoreBtn.cloneNode(true);
-    saveScoreBtn.parentNode.replaceChild(newSaveScoreBtn, saveScoreBtn);
-    
-    newSaveScoreBtn.addEventListener('click', () => {
-        const playerName = playerNameInput.value.trim();
-        if (playerName) {
-            // Save score to database
-            const gameApi = new GameAPI();
-            gameApi.saveScore(playerName, score, 1) // Level 1 for now
-                .then(() => {
-                    playerNameModal.classList.add('hidden');
-                    showHighScores();
-                })
-                .catch(error => {
-                    console.error('Error saving score:', error);
-                    showDialog('Error saving score. Please try again.', () => {
-                        playerNameModal.classList.add('hidden');
-                        init(); // Restart the game
-                    });
-                });
-        } else {
-            alert('Please enter your name');
+    if (ballsLeft > 0) {
+        // Reset ball position
+        ball.x = canvas.width / 2;
+        ball.y = canvas.height - 30;
+        ball.dx = 0;
+        ball.dy = 0;
+        ball.moving = false;
+        
+        // Reset phase back to 1
+        currentPhase = 1;
+        updatePhaseUI();
+        
+        // Show controls when ball is reset
+        const controlsElement = document.querySelector('.controls');
+        if (controlsElement) {
+            controlsElement.classList.remove('controls-hidden');
+            controlsElement.classList.add('controls-visible');
         }
-    });
-}
+    } else {
+        // Game over
+        showDialog('Game Over!', () => {
+            init(); // Restart the game
+        });
+    }
 }
 
 // Clear the canvas
@@ -790,102 +610,6 @@ function gameLoop(timestamp) {
     requestAnimationFrame(gameLoop);
 }
 
-// Initialize the game
-function init() {
-    // Reset game state
-    ballsLeft = 3;
-    score = 0;
-    currentLevel = 1;
-    document.getElementById('balls-count').textContent = ballsLeft;
-    document.getElementById('score').textContent = score;
-    
-    // Reset ball position
-    ball.x = canvas.width / 2;
-    ball.y = canvas.height - 30;
-    ball.dx = 0;
-    ball.dy = 0;
-    ball.moving = false;
-    ball.tailEffect = [];
-    
-    // Reset to Phase 1
-    setActivePhase(1);
-    
-    // Create blocks for the first level
-    createBlocks();
-    
-    // Start the game loop
-    gameLoop();
-}
-
-// Phase 2: Power Calibration
-confirmPowerBtn.addEventListener('click', () => {
-    // Don't allow firing when dialog is open
-    if (isDialogOpen) return;
-    
-    if (currentPhase === 2 && !ball.moving && ballsLeft > 0) {
-        // Move to Phase 3: Execution
-        setActivePhase(3);
-        
-        // Launch the ball automatically after a short delay
-        setTimeout(() => {
-            launchBall();
-        }, 500);
-    }
-});
-
-// Launch the ball with dynamic velocity-based tail effect
-function launchBall() {
-    if (ball.moving || ballsLeft <= 0) return;
-    
-    const angle = angleSlider.value * (Math.PI / 180);
-    const powerLevel = parseInt(powerSlider.value);
-    
-    // Map power level (1-4) to actual power values (3-15)
-    const powerValues = [3, 7, 11, 15];
-    const power = powerValues[powerLevel - 1];
-    
-    // Calculate velocity based on angle and power
-    ball.dx = power * Math.cos(angle);
-    ball.dy = -power * Math.sin(angle); // Negative because canvas Y is inverted
-    
-    // Create launch particles for visual feedback
-    if (USE_OBJECT_POOLING) {
-        const particleCount = Math.floor(power / 2) + 10; // More particles for higher power
-        for (let i = 0; i < particleCount; i++) {
-            const particle = particlePool.get();
-            
-            // Set particle properties for launch effect
-            particle.x = ball.x;
-            particle.y = ball.y;
-            particle.radius = 1 + Math.random() * 2;
-            particle.color = '#ffaa00'; // Orange-yellow for launch effect
-            particle.alpha = 1;
-            particle.life = 0;
-            particle.maxLife = 10 + Math.random() * 10;
-            
-            // Particles shoot in opposite direction of ball launch
-            const spreadAngle = angle + (Math.random() * 0.5 - 0.25); // Slight spread
-            const particlePower = power * 0.2 * (0.8 + Math.random() * 0.4);
-            particle.dx = -particlePower * Math.cos(spreadAngle) * 0.5;
-            particle.dy = particlePower * Math.sin(spreadAngle) * 0.5;
-        }
-    }
-    
-    // Initialize tail effect based on power level
-    ball.tailEffect = [];
-    
-    // Set execution message based on power level
-    const powerMessages = [
-        "Low power launch...",
-        "Medium power launch...",
-        "High power launch...",
-        "Maximum power launch!"
-    ];
-    executionMessage.textContent = powerMessages[powerLevel - 1];
-    
-    ball.moving = true;
-}
-
 // Display performance metrics
 function displayPerformanceMetrics() {
     ctx.fillStyle = '#ffffff';
@@ -906,9 +630,163 @@ function displayPerformanceMetrics() {
     // Display object pool stats if enabled
     if (USE_OBJECT_POOLING) {
         const stats = particlePool.getStats();
-        ctx.fillText(`Particles: ${stats.activeCount}/${stats.activeCount + stats.poolSize}`, 10, 95);
+        ctx.fillText(`Particles: ${stats.activeCount}/${stats.activeCount + stats.poolSize}`, 10, 110);
     }
 }
+
+// Initialize the game
+function init() {
+    // Reset game state
+    ballsLeft = 3;
+    currentLevel = 1;
+    ballsUsed = 0;
+    document.getElementById('balls-count').textContent = ballsLeft;
+    
+    // Reset ball counter UI
+    updateBallCounterUI();
+    
+    // Reset ball position
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height - 30;
+    ball.dx = 0;
+    ball.dy = 0;
+    ball.moving = false;
+    
+    // Make controls visible initially
+    const controlsElement = document.querySelector('.controls');
+    if (controlsElement) {
+        controlsElement.classList.remove('controls-hidden');
+        controlsElement.classList.add('controls-visible');
+    }
+    
+    // Create blocks for the first level
+    createBlocks();
+    
+    // Start the game loop
+    gameLoop();
+}
+
+// Update the ball counter UI
+function updateBallCounterUI() {
+    // First, reset all balls to their default state
+    for (let i = 1; i <= 3; i++) {
+        const ballElement = document.getElementById(`ball-${i}`);
+        if (ballElement) {
+            ballElement.classList.remove('ball-used');
+        }
+    }
+    
+    // Mark used balls
+    for (let i = 1; i <= ballsUsed; i++) {
+        const ballElement = document.getElementById(`ball-${i}`);
+        if (ballElement) {
+            ballElement.classList.add('ball-used');
+        }
+    }
+    
+    // Show/hide the "No balls remaining" message
+    const ballStatusMessage = document.getElementById('ball-status-message');
+    if (ballStatusMessage) {
+        if (ballsLeft <= 0) {
+            ballStatusMessage.classList.remove('hidden');
+        } else {
+            ballStatusMessage.classList.add('hidden');
+        }
+    }
+}
+
+// Update the phase UI
+function updatePhaseUI() {
+    // Remove active class from all phases
+    document.querySelectorAll('.phase').forEach(phase => {
+        phase.classList.remove('active');
+    });
+    
+    // Add active class to current phase
+    const currentPhaseElement = document.querySelector(`.phase-${currentPhase}`);
+    if (currentPhaseElement) {
+        currentPhaseElement.classList.add('active');
+    }
+    
+    // Update execution message
+    const executionMessage = document.getElementById('execution-message');
+    if (currentPhase === 3 && executionMessage) {
+        executionMessage.textContent = 'Ball in motion...';
+    }
+}
+
+// Game phase management
+let currentPhase = 1;
+
+// Position controls
+moveLeftBtn.addEventListener('click', () => {
+    if (currentPhase === 1 && !ball.moving) {
+        ball.x = Math.max(ball.radius + 10, ball.x - 20);
+    }
+});
+
+moveRightBtn.addEventListener('click', () => {
+    if (currentPhase === 1 && !ball.moving) {
+        ball.x = Math.min(canvas.width - ball.radius - 10, ball.x + 20);
+    }
+});
+
+confirmPositionBtn.addEventListener('click', () => {
+    if (currentPhase === 1) {
+        currentPhase = 2;
+        updatePhaseUI();
+    }
+});
+
+confirmPowerBtn.addEventListener('click', () => {
+    if (currentPhase === 2 && !ball.moving && ballsLeft > 0) {
+        const angle = angleSlider.value * (Math.PI / 180);
+        const power = powerSlider.value;
+        
+        // Calculate velocity based on angle and power
+        ball.dx = power * Math.cos(angle);
+        ball.dy = -power * Math.sin(angle); // Negative because canvas Y is inverted
+        
+        currentPhase = 3;
+        updatePhaseUI();
+        
+        // Create launch particles for visual feedback
+        if (USE_OBJECT_POOLING) {
+            const particleCount = Math.floor(power / 3) + 5; // More particles for higher power
+            for (let i = 0; i < particleCount; i++) {
+                const particle = particlePool.get();
+                
+                // Set particle properties for launch effect
+                particle.x = ball.x;
+                particle.y = ball.y;
+                particle.radius = 1 + Math.random() * 2;
+                particle.color = '#ffaa00'; // Orange-yellow for launch effect
+                particle.alpha = 1;
+                particle.life = 0;
+                particle.maxLife = 10 + Math.random() * 10;
+                
+                // Particles shoot in opposite direction of ball launch
+                const spreadAngle = angle + (Math.random() * 0.5 - 0.25); // Slight spread
+                const particlePower = power * 0.2 * (0.8 + Math.random() * 0.4);
+                particle.dx = -particlePower * Math.cos(spreadAngle) * 0.5;
+                particle.dy = particlePower * Math.sin(spreadAngle) * 0.5;
+            }
+        }
+        
+        ball.moving = true;
+        
+        // Hide controls when ball is moving
+        const controlsElement = document.querySelector('.controls');
+        controlsElement.classList.remove('controls-visible');
+        controlsElement.classList.add('controls-hidden');
+        
+        // Mark the first ball as used when the round begins
+        if (ballsUsed === 0) {
+            ballsUsed = 1;
+            updateBallCounterUI();
+        }
+    }
+});
 
 // Initialize the game when the page loads
 window.addEventListener('load', init);
@@ -920,6 +798,13 @@ const dialogOkBtn = document.getElementById('dialog-ok-btn');
 
 // Show custom dialog instead of alert
 function showDialog(message, callback) {
+    if (!customDialog || !dialogMessage || !dialogOkBtn) {
+        console.warn('Dialog elements not found, using alert instead');
+        alert(message);
+        if (callback) callback();
+        return;
+    }
+    
     isDialogOpen = true;
     dialogMessage.textContent = message;
     customDialog.classList.remove('hidden');
@@ -935,80 +820,3 @@ function showDialog(message, callback) {
         if (callback) callback();
     });
 }
-
-// Add error handling for ObjectPool initialization
-window.addEventListener('error', function(event) {
-    console.error('Error occurred:', event.error);
-    if (event.error && event.error.message && event.error.message.includes('ObjectPool')) {
-        alert('Error initializing game components. Please refresh the page or check console for details.');
-    }
-});
-
-// Function to show high scores
-function showHighScores() {
-    const highScoresModal = document.getElementById('high-scores-modal');
-    const highScoresList = document.getElementById('high-scores-list');
-    highScoresModal.classList.remove('hidden');
-    
-    // Show loading message
-    highScoresList.innerHTML = '<div class="loading">Loading scores...</div>';
-    
-    // Fetch high scores from the server
-    const gameApi = new GameAPI();
-    gameApi.getHighScores()
-        .then(scores => {
-            if (scores && scores.length > 0) {
-                // Create HTML for high scores
-                let html = '<table class="high-scores-table">';
-                html += '<tr><th>Rank</th><th>Player</th><th>Score</th></tr>';
-                
-                scores.forEach((score, index) => {
-                    html += `<tr>
-                        <td>${index + 1}</td>
-                        <td>${score.player_name}</td>
-                        <td>${score.score}</td>
-                    </tr>`;
-                });
-                
-                html += '</table>';
-                highScoresList.innerHTML = html;
-            } else {
-                highScoresList.innerHTML = '<p>No high scores yet. Be the first!</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching high scores:', error);
-            highScoresList.innerHTML = '<p>Error loading high scores. Please try again later.</p>';
-        });
-    
-    // Close button functionality
-    const closeButton = highScoresModal.querySelector('.close-button');
-    const newCloseButton = closeButton.cloneNode(true);
-    closeButton.parentNode.replaceChild(newCloseButton, closeButton);
-    
-    newCloseButton.addEventListener('click', () => {
-        highScoresModal.classList.add('hidden');
-        init(); // Restart the game
-    });
-}
-
-// Add a button to show high scores
-function addHighScoresButton() {
-    const gameStats = document.querySelector('.game-stats');
-    
-    // Create high scores button if it doesn't exist
-    if (!document.getElementById('high-scores-btn')) {
-        const highScoresBtn = document.createElement('div');
-        highScoresBtn.id = 'high-scores-btn';
-        highScoresBtn.className = 'high-scores-btn';
-        highScoresBtn.textContent = 'High Scores';
-        highScoresBtn.addEventListener('click', showHighScores);
-        gameStats.appendChild(highScoresBtn);
-    }
-}
-
-// Initialize the game immediately
-init();
-
-// Add high scores button after initialization
-addHighScoresButton();
