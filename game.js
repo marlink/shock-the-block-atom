@@ -419,23 +419,39 @@ function checkLevelComplete() {
         if (!allBlocksHit) break;
     }
     
-    // Replace this in the level completion code:
     if (allBlocksHit) {
-    // Level complete
-    currentLevel++;
-    showDialog(`Level ${currentLevel-1} complete! Moving to level ${currentLevel}`, () => {
-        // Reset ball position
-        ball.x = canvas.width / 2;
-        ball.y = canvas.height - 30;
-        ball.dx = 0;
-        ball.dy = 0;
-        ball.moving = false;
-        
-        // Continue with level setup...
-    });
-}
-
-
+        // Level complete
+        currentLevel++;
+        showDialog(`Level ${currentLevel-1} complete! Moving to level ${currentLevel}`, () => {
+            // Reset ball position
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 40;
+            ball.dx = 0;
+            ball.dy = 0;
+            ball.moving = false;
+            
+            // Reset to phase 1 for new level
+            currentPhase = 1;
+            
+            // Reset balls for new level
+            ballsLeft = 3;
+            ballsUsed = 0;
+            
+            // Create new blocks for next level
+            createBlocks();
+            
+            // Update UI
+            updateBallCounterUI();
+            updatePhaseUI();
+            
+            // Show controls again
+            const controlsElement = document.querySelector('.controls');
+            if (controlsElement) {
+                controlsElement.classList.remove('controls-hidden');
+                controlsElement.classList.add('controls-visible');
+            }
+        });
+    }
 }
 
 // Draw the ball
@@ -542,8 +558,15 @@ function ballLost() {
         }
     } else {
         // Game over
-        showDialog('Game Over!', () => {
-            init(); // Restart the game
+        showDialog('Game Over! No balls remaining.', () => {
+            // Reset game
+            ballsLeft = 3;
+            ballsUsed = 0;
+            currentLevel = 1;
+            currentPhase = 1;
+            createBlocks();
+            updateBallCounterUI();
+            updatePhaseUI();
         });
     }
 }
@@ -640,6 +663,8 @@ function init() {
     ballsLeft = 3;
     currentLevel = 1;
     ballsUsed = 0;
+    gameRunning = true;
+    currentPhase = 1;
     document.getElementById('balls-count').textContent = ballsLeft;
     
     // Reset ball counter UI
@@ -651,6 +676,15 @@ function init() {
     ball.dx = 0;
     ball.dy = 0;
     ball.moving = false;
+    
+    // Setup enhanced input handlers
+    setupInputHandlers();
+    
+    // Initialize power level indicators
+    updatePowerLevels();
+    
+    // Update UI
+    updatePhaseUI();
     
     // Make controls visible initially
     const controlsElement = document.querySelector('.controls');
@@ -664,6 +698,8 @@ function init() {
     
     // Start the game loop
     gameLoop();
+    
+    console.log('Game initialized with enhanced input handling - Version:', GAME_VERSION);
 }
 
 // Update the ball counter UI
@@ -708,17 +744,312 @@ function updatePhaseUI() {
         currentPhaseElement.classList.add('active');
     }
     
+    // Update game container data attribute for CSS styling
+    const gameContainer = document.querySelector('.game-container');
+    if (gameContainer) {
+        gameContainer.setAttribute('data-phase', currentPhase);
+    }
+    
     // Update execution message
     const executionMessage = document.getElementById('execution-message');
     if (currentPhase === 3 && executionMessage) {
         executionMessage.textContent = 'Ball in motion...';
     }
+    
+    // Add keyboard shortcut hints to phase content
+    updateShortcutHints();
+}
+
+// Add keyboard shortcut hints
+function updateShortcutHints() {
+    const phase1Content = document.querySelector('#phase-targeting .phase-content');
+    const phase2Content = document.querySelector('#phase-power .phase-content');
+    
+    if (phase1Content) {
+        phase1Content.setAttribute('data-shortcuts', 'Keys: ←→ or A/D to move, Space/Enter to confirm');
+    }
+    
+    if (phase2Content) {
+        phase2Content.setAttribute('data-shortcuts', 'Keys: ↑↓ or W/S for angle, ←→ or A/D for power, 1-4 for direct power, Space/Enter to fire');
+    }
 }
 
 // Game phase management
 let currentPhase = 1;
+let isMouseDown = false;
+let isDragging = false;
+let mouseStartX = 0;
+let mouseStartY = 0;
+let lastMouseX = 0;
+let lastMouseY = 0;
 
-// Position controls
+// Input handling variables
+let keys = {};
+let mousePosition = { x: 0, y: 0 };
+let isAiming = false;
+let aimStartX = 0;
+let aimStartY = 0;
+
+// Enhanced input handling for multiple devices
+function setupInputHandlers() {
+    // Mouse and trackpad events
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    
+    // Touch events for mobile/trackpad gestures
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // Keyboard events
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    
+    // Prevent context menu on right click
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+// Mouse/trackpad handlers
+function handleMouseDown(e) {
+    if (isDialogOpen) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    mousePosition.x = x;
+    mousePosition.y = y;
+    isMouseDown = true;
+    mouseStartX = x;
+    mouseStartY = y;
+    
+    if (currentPhase === 1 && !ball.moving) {
+        // Phase 1: Position control with mouse
+        isDragging = true;
+        ball.x = Math.max(ball.radius + 10, Math.min(canvas.width - ball.radius - 10, x));
+    } else if (currentPhase === 2 && !ball.moving) {
+        // Phase 2: Start aiming
+        isAiming = true;
+        aimStartX = x;
+        aimStartY = y;
+    }
+}
+
+function handleMouseMove(e) {
+    if (isDialogOpen) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    mousePosition.x = x;
+    mousePosition.y = y;
+    
+    if (currentPhase === 1 && isDragging && !ball.moving) {
+        // Phase 1: Drag to position ball
+        ball.x = Math.max(ball.radius + 10, Math.min(canvas.width - ball.radius - 10, x));
+    } else if (currentPhase === 2 && isAiming && !ball.moving) {
+        // Phase 2: Mouse aiming
+        const deltaX = x - aimStartX;
+        const deltaY = y - aimStartY;
+        
+        // Calculate angle from mouse movement
+        let angle = Math.atan2(-deltaY, deltaX) * (180 / Math.PI);
+        if (angle < 0) angle += 360;
+        if (angle > 180) angle = 180;
+        
+        angleSlider.value = Math.max(0, Math.min(180, angle));
+        angleValue.textContent = Math.round(angleSlider.value) + '°';
+        
+        // Calculate power from distance
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        const power = Math.max(1, Math.min(4, Math.floor(distance / 30) + 1));
+        powerSlider.value = power;
+        powerValue.textContent = power;
+        updatePowerLevels();
+    }
+    
+    lastMouseX = x;
+    lastMouseY = y;
+}
+
+function handleMouseUp(e) {
+    if (isDialogOpen) return;
+    
+    isMouseDown = false;
+    isDragging = false;
+    
+    if (currentPhase === 2 && isAiming && !ball.moving) {
+        // Auto-confirm power after aiming with mouse
+        isAiming = false;
+        setTimeout(() => {
+            if (currentPhase === 2) {
+                confirmPowerBtn.click();
+            }
+        }, 100);
+    }
+}
+
+// Wheel/scroll handling for fine adjustments
+function handleWheel(e) {
+    if (isDialogOpen) return;
+    e.preventDefault();
+    
+    if (currentPhase === 2 && !ball.moving) {
+        const delta = e.deltaY > 0 ? -1 : 1;
+        
+        if (e.shiftKey) {
+            // Shift + scroll: adjust power
+            const newPower = Math.max(1, Math.min(4, parseInt(powerSlider.value) + delta));
+            powerSlider.value = newPower;
+            powerValue.textContent = newPower;
+            updatePowerLevels();
+        } else {
+            // Normal scroll: adjust angle
+            const newAngle = Math.max(0, Math.min(180, parseInt(angleSlider.value) + delta * 5));
+            angleSlider.value = newAngle;
+            angleValue.textContent = newAngle + '°';
+        }
+    }
+}
+
+// Touch handlers for mobile/trackpad gestures
+function handleTouchStart(e) {
+    if (isDialogOpen) return;
+    e.preventDefault();
+    
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        // Simulate mouse down
+        handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+}
+
+function handleTouchMove(e) {
+    if (isDialogOpen) return;
+    e.preventDefault();
+    
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        // Simulate mouse move
+        handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+    }
+}
+
+function handleTouchEnd(e) {
+    if (isDialogOpen) return;
+    e.preventDefault();
+    
+    // Simulate mouse up
+    handleMouseUp(e);
+}
+
+// Keyboard handlers
+function handleKeyDown(e) {
+    if (isDialogOpen) return;
+    
+    keys[e.code] = true;
+    
+    // Phase navigation
+    if (e.code === 'Space') {
+        e.preventDefault();
+        if (currentPhase === 1) {
+            confirmPositionBtn.click();
+        } else if (currentPhase === 2) {
+            confirmPowerBtn.click();
+        }
+    }
+    
+    // Phase 1: Position control
+    if (currentPhase === 1 && !ball.moving) {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+            e.preventDefault();
+            ball.x = Math.max(ball.radius + 10, ball.x - (e.shiftKey ? 5 : 20));
+        } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+            e.preventDefault();
+            ball.x = Math.min(canvas.width - ball.radius - 10, ball.x + (e.shiftKey ? 5 : 20));
+        } else if (e.code === 'Enter') {
+            e.preventDefault();
+            confirmPositionBtn.click();
+        }
+    }
+    
+    // Phase 2: Angle and power control
+    if (currentPhase === 2 && !ball.moving) {
+        if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+            e.preventDefault();
+            const newAngle = Math.max(0, parseInt(angleSlider.value) - (e.shiftKey ? 1 : 5));
+            angleSlider.value = newAngle;
+            angleValue.textContent = newAngle + '°';
+        } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+            e.preventDefault();
+            const newAngle = Math.min(180, parseInt(angleSlider.value) + (e.shiftKey ? 1 : 5));
+            angleSlider.value = newAngle;
+            angleValue.textContent = newAngle + '°';
+        } else if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+            e.preventDefault();
+            const newPower = Math.max(1, parseInt(powerSlider.value) - 1);
+            powerSlider.value = newPower;
+            powerValue.textContent = newPower;
+            updatePowerLevels();
+        } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+            e.preventDefault();
+            const newPower = Math.min(4, parseInt(powerSlider.value) + 1);
+            powerSlider.value = newPower;
+            powerValue.textContent = newPower;
+            updatePowerLevels();
+        } else if (e.code === 'Enter') {
+            e.preventDefault();
+            confirmPowerBtn.click();
+        }
+        
+        // Number keys for direct power selection
+        if (e.code >= 'Digit1' && e.code <= 'Digit4') {
+            e.preventDefault();
+            const power = parseInt(e.code.slice(-1));
+            powerSlider.value = power;
+            powerValue.textContent = power;
+            updatePowerLevels();
+        }
+    }
+    
+    // Global shortcuts
+    if (e.code === 'Escape') {
+        e.preventDefault();
+        // Reset to phase 1 if not in motion
+        if (!ball.moving && currentPhase > 1) {
+            currentPhase = 1;
+            updatePhaseUI();
+        }
+    }
+}
+
+function handleKeyUp(e) {
+    keys[e.code] = false;
+}
+
+// Update power level visual indicators
+function updatePowerLevels() {
+    const powerLevels = document.querySelectorAll('.power-level');
+    const currentPower = parseInt(powerSlider.value);
+    
+    powerLevels.forEach((level, index) => {
+        const levelValue = index + 1;
+        if (levelValue <= currentPower) {
+            level.classList.add('active');
+        } else {
+            level.classList.remove('active');
+        }
+    });
+}
+
+// Position controls (keeping original button functionality)
 moveLeftBtn.addEventListener('click', () => {
     if (currentPhase === 1 && !ball.moving) {
         ball.x = Math.max(ball.radius + 10, ball.x - 20);
@@ -777,8 +1108,10 @@ confirmPowerBtn.addEventListener('click', () => {
         
         // Hide controls when ball is moving
         const controlsElement = document.querySelector('.controls');
-        controlsElement.classList.remove('controls-visible');
-        controlsElement.classList.add('controls-hidden');
+        if (controlsElement) {
+            controlsElement.classList.remove('controls-visible');
+            controlsElement.classList.add('controls-hidden');
+        }
         
         // Mark the first ball as used when the round begins
         if (ballsUsed === 0) {

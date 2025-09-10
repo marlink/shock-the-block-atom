@@ -33,8 +33,26 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Serve static files from parent directory
-app.use(express.static(path.join(__dirname, '..')));
+// Serve static files from parent directory with cache control
+app.use(express.static(path.join(__dirname, '..'), {
+  setHeaders: (res, path) => {
+    // Prevent caching of bundle files that might not exist
+    if (path.includes('bundle.js')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    // Set cache control for other static files
+    else {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
+
+// Handle 404 for bundle.js files specifically
+app.get('/*.bundle.js', (req, res) => {
+  res.status(404).send('Bundle file not found - this application does not use webpack bundles');
+});
 
 // Database connection
 const pool = new Pool({
